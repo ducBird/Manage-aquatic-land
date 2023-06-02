@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { axiosClient } from "../../../libraries/axiosClient";
-import { ISupplier } from "../../../interfaces/Supplier";
+import { ISubCategory } from "../../../interfaces/SubCategory";
 import {
   Table,
   Button,
@@ -12,6 +12,7 @@ import {
   Upload,
   Space,
   DatePicker,
+  Select,
 } from "antd";
 import {
   UploadOutlined,
@@ -21,38 +22,51 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { API_URL } from "../../../constants/URLS";
-import { columnSuppliers } from "./columnSuppliers";
+import { columnSubCategories } from "./columnSubCategories";
 import { addedAttribute } from "../../../utils/AddAttributeToColumns";
-import style from "./suppliers.module.css";
+import style from "./subcategories.module.css";
 import CustomForm from "../../../components/common/CustomForm";
 import moment from "moment";
+import { ICategory } from "../../../interfaces/Category";
+import { getAllSubCategories } from "../../../apis/subCategories";
+import { getAllCategories } from "../../../apis/categories";
 
-export default function Suppliers() {
-  const [suppliers, setSuppliers] = useState<ISupplier[]>([]);
+export default function SubCategories() {
+  const [subCategories, setSubCategories] = useState<ISubCategory[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<ISupplier>({});
+  const [selectedRecord, setSelectedRecord] = useState<ISubCategory>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   useEffect(() => {
-    axiosClient
-      .get("/suppliers")
-      .then((response) => {
-        const filteredSuppliers = response.data.filter(
-          (supplier: ISupplier) => {
-            return supplier.is_delete === false;
-          }
-        );
-        setSuppliers(filteredSuppliers);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    const fetchDataSubCategories = async () => {
+      try {
+        const data = await getAllSubCategories();
+        setSubCategories(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchDataSubCategories();
   }, [refresh]);
 
-  const columns: ColumnsType<ISupplier> = [
+  // get list categories
+  useEffect(() => {
+    const fetchDataCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        setCategories(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchDataCategories();
+  }, []);
+
+  const columns: ColumnsType<ISubCategory> = [
     {
       title: "",
       key: "actions",
@@ -89,7 +103,7 @@ export default function Suppliers() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/suppliers/" + id, { is_delete: true })
+                    .patch("/sub-categories/" + id, { is_delete: true })
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -110,22 +124,13 @@ export default function Suppliers() {
       },
     },
   ];
-  addedAttribute(columnSuppliers, columns);
+  addedAttribute(columnSubCategories, columns);
 
-  const phoneValidator = (rule: any, value: any, callback: any) => {
-    const phoneNumberPattern =
-      /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/;
-    if (value && !phoneNumberPattern.test(value)) {
-      callback("Invalid phone number!");
-    } else {
-      callback();
-    }
-  };
   // Handle Form
-  const supplierField = [
+  const subcategoryField = [
     {
       name: "name",
-      label: "Tên",
+      label: "Name",
       rules: [
         {
           required: true,
@@ -135,43 +140,27 @@ export default function Suppliers() {
       component: <Input />,
     },
     {
-      name: "email",
-      label: "Email",
+      name: "category_id",
+      label: "Category",
       rules: [
         {
           required: true,
-          message: "Email không được để trống!",
-        },
-        { type: "email", message: "Email không hợp lệ!" },
-      ],
-      component: <Input />,
-    },
-    {
-      name: "phone_number",
-      label: "SĐT",
-      rules: [
-        { required: true, message: "Số điện thoại không được để trống!" },
-        {
-          validator: phoneValidator,
+          message: "Danh mục không được để trống!",
         },
       ],
-      component: <Input maxLength={10} />,
-    },
-    {
-      name: "address",
-      label: "Địa chỉ",
-      rules: [
-        {
-          required: true,
-          message: "Địa chỉ không được để trống!",
-        },
-      ],
-      component: <Input />,
-    },
-    {
-      name: "affiliated_website",
-      label: "Website",
-      component: <Input />,
+      component: (
+        <Select
+          options={
+            categories &&
+            categories.map((category) => {
+              return {
+                value: category._id,
+                label: category.name,
+              };
+            })
+          }
+        />
+      ),
     },
     {
       name: "createdAt",
@@ -203,9 +192,9 @@ export default function Suppliers() {
       ),
     },
   ];
-  const onFinish = (values: ISupplier) => {
+  const onFinish = (values: ISubCategory) => {
     axiosClient
-      .post("/suppliers", values)
+      .post("/sub-categories", values)
       .then(() => {
         createForm.resetFields();
         setRefresh((f) => f + 1);
@@ -221,9 +210,9 @@ export default function Suppliers() {
   const onFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-  const onUpdateFinish = (values: ISupplier) => {
+  const onUpdateFinish = (values: ISubCategory) => {
     axiosClient
-      .patch("/suppliers/" + selectedRecord._id, values)
+      .patch("/sub-categories/" + selectedRecord._id, values)
       .then(() => {
         message.success("Cập nhật thành công!");
         setRefresh((f) => f + 1);
@@ -241,19 +230,19 @@ export default function Suppliers() {
 
   return (
     <div>
-      <h1>Supplier List</h1>
+      <h1>SubCategory List</h1>
       <Button
         className={`${style.custom_button}`}
         onClick={() => {
           setCreateFormVisible(true);
         }}
       >
-        Thêm nhà cung cấp
+        Thêm danh mục con
       </Button>
       <Modal
         centered
         open={createFormVisible}
-        title="Thêm mới nhà cung cấp"
+        title="Thêm mới danh mục con"
         onOk={() => {
           createForm.submit();
         }}
@@ -268,13 +257,13 @@ export default function Suppliers() {
           formName={"create-form"}
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
-          fields={supplierField}
+          fields={subcategoryField}
         />
       </Modal>
       {/* Update Form */}
       <Modal
         centered
-        title="Chỉnh sửa nhà cung cấp"
+        title="Cập nhật danh mục con"
         open={editFormVisible}
         onOk={() => {
           updateForm.submit();
@@ -290,10 +279,10 @@ export default function Suppliers() {
           formName={"update-form"}
           onFinish={onUpdateFinish}
           onFinishFailed={onUpdateFinishFailed}
-          fields={supplierField}
+          fields={subcategoryField}
         />
       </Modal>
-      <Table rowKey={"_id"} dataSource={suppliers} columns={columns} />
+      <Table rowKey={"_id"} dataSource={subCategories} columns={columns} />
     </div>
   );
 }
