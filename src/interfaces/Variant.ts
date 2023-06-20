@@ -1,15 +1,15 @@
-interface IImage {
+export interface IImage {
   _id?: string;
   src?: string;
   position?: number;
 }
 
-interface IOption {
+export interface IOption {
   _id?: object;
   value?: string;
   add_valuation?: number;
   inventory_quantity?: number;
-  images?: IImage;
+  images?: [IImage];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -19,7 +19,7 @@ export interface IVariant {
   title?: string;
   price_adjustment?: number;
   position?: number;
-  options: IOption;
+  options: [IOption];
   product_id?: number;
   is_delete?: boolean;
   createdAt?: Date;

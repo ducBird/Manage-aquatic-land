@@ -51,22 +51,18 @@ export default function Products() {
   //--- state quản lý đóng mở Modal ---//
   const [createFormVisible, setCreateFormVisible] = useState(false);
   const [editFormVisible, setEditFormVisible] = useState(false);
-  const [openCreateModalVariant, setCreateOpenModalVariant] = useState(false);
-  const [openUpdateModalVariant, setUpdateOpenModalVariant] = useState(false);
+  const [openModalVariant, setOpenModalVariant] = useState(false);
   //----------------------------------------------------------------//
 
   //--- state xử lý render khi có sự thay đổi ở useEffect ---//
   const [refresh, setRefresh] = useState(0);
   //----------------------------------------------------------------//
-
-  const [disabledButtonVariant, setDisabledButtonVariant] = useState(true);
   const [variants, setVariants] = useState<IVariant[]>([]);
 
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
-  const [createVariantForm] = Form.useForm();
-  const [updateVariantForm] = Form.useForm();
+  const [variantForm] = Form.useForm();
 
   //gets list products
   useEffect(() => {
@@ -160,6 +156,18 @@ export default function Products() {
         return (
           <div>
             <Space>
+              {/* Button Variant */}
+              <Button
+                type="primary"
+                onClick={() => {
+                  setOpenModalVariant(true);
+                  setSelectedRecord(record);
+                  variantForm.setFieldsValue(record);
+                  // console.log(record.variants);
+                }}
+              >
+                Biến thể
+              </Button>
               {/* Button Edit */}
               <Button
                 onClick={() => {
@@ -428,29 +436,21 @@ export default function Products() {
       initialValue: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
       component: <TextArea rows={3} />,
     },
-    {
-      name: "variantButton",
-      component: editFormVisible ? (
-        <Button
-          type="dashed"
-          onClick={() => {
-            setUpdateOpenModalVariant(true);
-          }}
-        >
-          Biến thể
-        </Button>
-      ) : (
-        <Button
-          type="dashed"
-          disabled={disabledButtonVariant}
-          onClick={() => {
-            setCreateOpenModalVariant(true);
-          }}
-        >
-          Biến thể
-        </Button>
-      ),
-    },
+    // {
+    //   name: "variantButton",
+    //   component: editFormVisible ? (
+    //     <Button
+    //       type="dashed"
+    //       onClick={() => {
+    //         setOpenModalVariant(true);
+    //       }}
+    //     >
+    //       Biến thể
+    //     </Button>
+    //   ) : (
+    //     <></>
+    //   ),
+    // },
   ];
 
   const onCreateFinish = (values: IProduct) => {
@@ -471,22 +471,7 @@ export default function Products() {
   const onCreateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-  const onFieldsChange = (_: any, allFields: any) => {
-    // Danh sách thuộc tính không liên quan đến việc kiểm tra đầu vào trong createForm
-    const valuesToDelete = ["variantButton", "createdAt", "updatedAt"];
-    // Lọc và xóa phần tử cha khi phần tử con có giá trị trong valuesToDelete
-    const newAllField = allFields.filter((value: any) => {
-      return !valuesToDelete.includes(value.name[0]);
-    });
-    // để có thể biết được vì sao cần những dòng trên thì phải console.log("newAllField", newAllField) để xem allFields trả về
-    // console.log("newAllField", newAllField);
-    const isAllFieldsFilled = newAllField.every((field: any) => {
-      return field.value !== undefined && field.value !== "";
-    });
-    console.log(moment(new Date(), "YYYY-MM-DD HH:mm:ss"));
 
-    setDisabledButtonVariant(!isAllFieldsFilled);
-  };
   const onUpdateFinish = (values: IProduct) => {
     axiosClient
       .patch("/products/" + selectedRecord._id, values)
@@ -503,6 +488,14 @@ export default function Products() {
   };
   const onUpdateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
+  };
+
+  const onVariantFinish = (values: IVariant) => {
+    console.log("selectedRecord._id", selectedRecord._id);
+    console.log("variant finished", values);
+  };
+  const onVariantFinishFailed = (errors: object) => {
+    console.log(errors);
   };
 
   return (
@@ -535,107 +528,8 @@ export default function Products() {
           formName={"create-form"}
           onFinish={onCreateFinish}
           onFinishFailed={onCreateFinishFailed}
-          onFieldsChange={onFieldsChange}
           fields={productField}
         />
-
-        {/* --- CREATE VARIANT FORM --- */}
-        <Modal
-          centered
-          open={openCreateModalVariant}
-          title="Biến thể"
-          onOk={() => {
-            updateVariantForm.submit();
-          }}
-          onCancel={() => {
-            setCreateOpenModalVariant(false);
-          }}
-          okText="Lưu"
-          cancelText="Đóng"
-        >
-          <Form
-            form={updateVariantForm}
-            name="variant-form"
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            onFinish={(values: IVariant) => {
-              console.log("variant finished", values);
-            }}
-          >
-            {/* Form.Item cho trường "Title" */}
-            <Form.Item label="Tên biến thể" name="title">
-              <Input />
-            </Form.Item>
-
-            {/* Form.Item cho trường "price_adjustment" */}
-            <Form.Item label="Giá" name="price_adjustment">
-              <Input />
-            </Form.Item>
-
-            {/* Form.Item cho trường "position" */}
-            <Form.Item label="Vị trí" name="position">
-              <Input />
-            </Form.Item>
-
-            {/* Form.List cho danh sách "options" */}
-            <Form.List name="options">
-              {(fields, { add, remove }) => (
-                <>
-                  {/* Hiển thị các trường cho mỗi option */}
-                  {fields.map((field, index) => (
-                    <div key={field.key}>
-                      {/* Form.Item cho trường "Option Value" */}
-                      <Form.Item
-                        label={`Option Value ${index}`}
-                        name={[field.name, "value"]}
-                      >
-                        <Input />
-                      </Form.Item>
-                      {/* Form.Item cho trường "Add Valuation" */}
-                      <Form.Item
-                        label={`Add Valuation ${index}`}
-                        name={[field.name, "add_valuation"]}
-                      >
-                        <InputNumber />
-                      </Form.Item>
-                      {/* Form.Item cho trường "Inventory Quantity" */}
-                      <Form.Item
-                        label={`Inventory Quantity ${index}`}
-                        name={[field.name, "inventory_quantity"]}
-                      >
-                        <InputNumber />
-                      </Form.Item>
-                      {/* Form.Item cho trường "Image Source" */}
-                      <Form.Item
-                        label={`Image Source ${index}`}
-                        name={[field.name, "images", "src"]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </div>
-                  ))}
-
-                  {/* Nút để thêm và xoá option */}
-                  <Form.Item>
-                    <button
-                      type="button"
-                      onClick={() => add()}
-                      style={{ marginRight: "8px" }}
-                    >
-                      Add Option
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => remove(fields.length - 1)}
-                    >
-                      Remove Option
-                    </button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-          </Form>
-        </Modal>
       </Modal>
 
       {/* --- UPDATE PRODUCT FORM --- */}
@@ -659,104 +553,121 @@ export default function Products() {
           onFinishFailed={onUpdateFinishFailed}
           fields={productField}
         />
-        {/* --- UPDATE VARIANT FORM --- */}
-        <Modal
-          centered
-          open={openUpdateModalVariant}
-          title="Biến thể"
-          onOk={() => {
-            updateVariantForm.submit();
-          }}
-          onCancel={() => {
-            setUpdateOpenModalVariant(false);
-          }}
-          okText="Lưu"
-          cancelText="Đóng"
+      </Modal>
+
+      {/* --- VARIANT FORM --- */}
+      <Modal
+        centered
+        open={openModalVariant}
+        title="Biến thể"
+        onOk={() => {
+          variantForm.submit();
+        }}
+        onCancel={() => {
+          setOpenModalVariant(false);
+        }}
+        okText="Lưu"
+        cancelText="Đóng"
+      >
+        {/* UPDATE VARIANT FORM */}
+        <Form
+          form={variantForm}
+          name="variant-form"
+          labelCol={{ span: 8 }}
+          wrapperCol={{ span: 16 }}
+          onFinish={onVariantFinish}
+          onFinishFailed={onVariantFinishFailed}
         >
-          {/* UPDATE VARIANT FORM */}
-          <Form
-            form={updateVariantForm}
-            name="variant-form"
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            onFinish={(values: IVariant) => {
-              console.log("variant finished", values);
-            }}
-          >
-            {/* Form.Item cho trường "Title" */}
-            <Form.Item label="Tên biến thể" name="title">
-              <Input />
-            </Form.Item>
-
-            {/* Form.Item cho trường "price_adjustment" */}
-            <Form.Item label="Giá" name="price_adjustment">
-              <Input />
-            </Form.Item>
-
-            {/* Form.Item cho trường "position" */}
-            <Form.Item label="Vị trí" name="position">
-              <Input />
-            </Form.Item>
-
-            {/* Form.List cho danh sách "options" */}
-            <Form.List name="options">
-              {(fields, { add, remove }) => (
-                <>
-                  {/* Hiển thị các trường cho mỗi option */}
-                  {fields.map((field, index) => (
-                    <div key={field.key}>
-                      {/* Form.Item cho trường "Option Value" */}
-                      <Form.Item
-                        label={`Option Value ${index}`}
-                        name={[field.name, "value"]}
-                      >
-                        <Input />
-                      </Form.Item>
-                      {/* Form.Item cho trường "Add Valuation" */}
-                      <Form.Item
-                        label={`Add Valuation ${index}`}
-                        name={[field.name, "add_valuation"]}
-                      >
-                        <InputNumber />
-                      </Form.Item>
-                      {/* Form.Item cho trường "Inventory Quantity" */}
-                      <Form.Item
-                        label={`Inventory Quantity ${index}`}
-                        name={[field.name, "inventory_quantity"]}
-                      >
-                        <InputNumber />
-                      </Form.Item>
-                      {/* Form.Item cho trường "Image Source" */}
-                      <Form.Item
-                        label={`Image Source ${index}`}
-                        name={[field.name, "images", "src"]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </div>
-                  ))}
-
-                  {/* Nút để thêm và xoá option */}
-                  <Form.Item>
-                    <button
-                      type="button"
-                      onClick={() => add()}
-                      style={{ marginRight: "8px" }}
+          <Form.List name="variants">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field, index) => (
+                  <div key={field.key} className={style.variant_container}>
+                    <h4 style={{ marginTop: 0 }}>Biến thể {index + 1}</h4>
+                    <Form.Item
+                      label={`Tên biến thể`}
+                      name={[field.name, "title"]}
                     >
-                      Add Option
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => remove(fields.length - 1)}
+                      <Input />
+                    </Form.Item>
+                    <Form.Item
+                      label={`Giá điều chỉnh`}
+                      name={[field.name, "price_adjustment"]}
                     >
-                      Remove Option
-                    </button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-          </Form>
-        </Modal>
+                      <InputNumber />
+                    </Form.Item>
+                    <Form.Item
+                      label={`Thứ tứ xếp`}
+                      name={[field.name, "position"]}
+                    >
+                      <InputNumber />
+                    </Form.Item>
+                    <Form.Item label="Tùy chọn" name={[field.name, "options"]}>
+                      <Form.List name={[field.name, "options"]}>
+                        {(
+                          optionFields,
+                          { add: addOption, remove: removeOption }
+                        ) => (
+                          <>
+                            {optionFields.map((optionField, optionIndex) => (
+                              <div
+                                key={optionField.key}
+                                className={style.option_container}
+                              >
+                                <Form.Item
+                                  label={`Tùy chọn ${optionIndex + 1}`}
+                                  name={[optionField.name, "value"]}
+                                >
+                                  <Input />
+                                </Form.Item>
+                                <Form.Item
+                                  label="Giá cộng thêm"
+                                  name={[optionField.name, "add_valuation"]}
+                                >
+                                  <InputNumber />
+                                </Form.Item>
+                                <Form.Item
+                                  label="Tồn kho"
+                                  name={[
+                                    optionField.name,
+                                    "inventory_quantity",
+                                  ]}
+                                >
+                                  <InputNumber />
+                                </Form.Item>
+                                <Form.Item
+                                  label={`Image Source`}
+                                  name={[optionField.name, "images", "src"]}
+                                >
+                                  <Input />
+                                </Form.Item>
+                                <Button
+                                  danger
+                                  onClick={() => removeOption(optionField.name)}
+                                >
+                                  Xóa tùy chọn
+                                </Button>
+                              </div>
+                            ))}
+                            <Button type="dashed" onClick={() => addOption()}>
+                              Thêm tùy chọn
+                            </Button>
+                          </>
+                        )}
+                      </Form.List>
+                    </Form.Item>
+                    <Button danger onClick={() => remove(field.name)}>
+                      Xóa biến thể
+                    </Button>
+                  </div>
+                ))}
+                <Button type="dashed" onClick={() => add()}>
+                  Thêm biến thể
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </Form>
       </Modal>
       <Table rowKey={"_id"} dataSource={products} columns={columns} />
     </div>

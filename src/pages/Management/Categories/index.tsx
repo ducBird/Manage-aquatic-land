@@ -20,12 +20,13 @@ import {
   QuestionCircleOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { API_URL } from "../../../constants/URLS";
 import { columnCategories } from "./columnCategories";
 import { addedAttribute } from "../../../utils/AddAttributeToColumns";
 import style from "./categories.module.css";
 import CustomForm from "../../../components/common/CustomForm";
 import moment from "moment";
+import axios from "axios";
+import { API_URL } from "../../../constants/URLS";
 
 export default function Categories() {
   const [categories, setCategories] = useState<ICategory[]>([]);
@@ -33,6 +34,8 @@ export default function Categories() {
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ICategory>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  // File
+  const [file, setFile] = useState<any>();
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
@@ -126,6 +129,21 @@ export default function Categories() {
       component: <Input />,
     },
     {
+      name: "file",
+      label: "Hình ảnh",
+      component: (
+        <Upload
+          showUploadList={true}
+          beforeUpload={(file) => {
+            setFile(file);
+            return false;
+          }}
+        >
+          <Button icon={<UploadOutlined />}>Tải lên hình ảnh</Button>
+        </Upload>
+      ),
+    },
+    {
       name: "createdAt",
       label: "Ngày tạo",
       noStyle: createFormVisible ? true : editFormVisible ? false : true,
@@ -156,10 +174,26 @@ export default function Categories() {
       ),
     },
   ];
-  const onFinish = (values: ICategory) => {
+  const onFinish = (values: any) => {
     axiosClient
       .post("/categories", values)
-      .then(() => {
+      .then((response) => {
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/categories/${_id}`, formData)
+            .then((response) => {
+              message.success("Tải lên hình ảnh thành công!");
+              // createForm.resetFields();
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              console.log(err);
+            });
+        }
         createForm.resetFields();
         setRefresh((f) => f + 1);
         message.success("Thêm mới thành công!");
@@ -169,18 +203,35 @@ export default function Categories() {
         message.error(err.response.data.msg);
         console.log(err);
       });
-    // console.log("👌👌👌", values);
+    console.log("👌👌👌", values);
   };
   const onFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-  const onUpdateFinish = (values: ICategory) => {
+  const onUpdateFinish = (values: any) => {
     axiosClient
       .patch("/categories/" + selectedRecord._id, values)
-      .then(() => {
-        message.success("Cập nhập thành công!");
-        setRefresh((f) => f + 1);
+      .then((response) => {
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/categories/${_id}`, formData)
+            .then((response) => {
+              message.success("Tải lên hình ảnh thành công!");
+              // createForm.resetFields();
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              console.log(err);
+            });
+        }
+        updateForm.resetFields();
         setEditFormVisible(false);
+        setRefresh((f) => f + 1);
+        message.success("Cập nhật thành công!");
       })
       .catch((err) => {
         message.error("Cập nhật thất bại!");
@@ -203,6 +254,7 @@ export default function Categories() {
       >
         Thêm danh mục
       </Button>
+      {/* Cteate Form */}
       <Modal
         centered
         open={createFormVisible}
