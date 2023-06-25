@@ -32,6 +32,7 @@ import { ICategory } from "../../../interfaces/Category";
 import { ISubCategory } from "../../../interfaces/SubCategory";
 import { ISupplier } from "../../../interfaces/Supplier";
 import { IVariant } from "../../../interfaces/Variant";
+import axios from "axios";
 
 export default function Products() {
   //--- state để render dữ liệu ở columns, productField và xử lý <Select/> trong Form antd ---//
@@ -163,7 +164,7 @@ export default function Products() {
                   setOpenModalVariant(true);
                   setSelectedRecord(record);
                   variantForm.setFieldsValue(record);
-                  // console.log(record.variants);
+                  // console.log(record);
                 }}
               >
                 Biến thể
@@ -490,9 +491,52 @@ export default function Products() {
     console.log("💣💣💣 ", errors);
   };
 
-  const onVariantFinish = (values: IVariant) => {
-    console.log("selectedRecord._id", selectedRecord._id);
-    console.log("variant finished", values);
+  const onVariantFinish = (values: any) => {
+    if (!selectedRecord.variants?.length) {
+      createVariants(values);
+    } else {
+      updateVariants(values);
+    }
+  };
+  const updateVariants = (values: any) => {
+    axios
+      .put("http://localhost:9000/variants-p/updateVariants", values)
+      .then((res) => {
+        console.log("res.data", res.data);
+        message.success("Cập nhật thành công!");
+        setRefresh((f) => f + 1);
+      })
+      .catch((err) => {
+        message.error("Cập nhật thất bại!");
+        message.error(err.response.data.msg);
+        console.log(err);
+      });
+  };
+  const createVariants = (values: any) => {
+    const updateVariants: any = [];
+    values.variants.map((v: IVariant, index: number) => {
+      const valueVariants = { ...v, product_id: selectedRecord._id };
+      axiosClient
+        .post("/variants-p/", valueVariants)
+        .then((res) => {
+          const variantId = res.data.id;
+          updateVariants.push(variantId);
+          // console.log("valueVariants", valueVariants);
+          // console.log("res.data", res.data);
+          // console.log("updateVariants",updateVariants);
+          axiosClient.patch("/products/" + selectedRecord._id, {
+            variants: updateVariants,
+          });
+          setRefresh((f) => f + 1);
+          // setOpenModalVariant(false);
+          message.success(`Biến thể ${index + 1} đã được cập nhật!`);
+        })
+        .catch((err) => {
+          message.error("Cập nhật biến thể thất bại!");
+          message.error(err.response.data.msg);
+          console.log(err);
+        });
+    });
   };
   const onVariantFinishFailed = (errors: object) => {
     console.log(errors);
@@ -558,6 +602,7 @@ export default function Products() {
       {/* --- VARIANT FORM --- */}
       <Modal
         centered
+        width={"50%"}
         open={openModalVariant}
         title="Biến thể"
         onOk={() => {
@@ -636,10 +681,72 @@ export default function Products() {
                                   <InputNumber />
                                 </Form.Item>
                                 <Form.Item
-                                  label={`Image Source`}
-                                  name={[optionField.name, "images", "src"]}
+                                  label={`Hình ảnh`}
+                                  name={[optionField.name, "images"]}
                                 >
-                                  <Input />
+                                  <Form.List
+                                    name={[optionField.name, "images"]}
+                                  >
+                                    {(
+                                      imageFields,
+                                      { add: addImage, remove: removeImage }
+                                    ) => (
+                                      <>
+                                        {imageFields.map(
+                                          (imageField, imageIndex) => (
+                                            <div
+                                              key={imageField.key}
+                                              className={style.option_container}
+                                            >
+                                              <Form.Item
+                                                label={`Image ${
+                                                  imageIndex + 1
+                                                }`}
+                                                name={[imageField.name, "src"]}
+                                              >
+                                                <Input />
+                                                {/* <Upload
+                                                  showUploadList={true}
+                                                  beforeUpload={(file) => {
+                                                    setFile(file);
+                                                    return false;
+                                                  }}
+                                                >
+                                                  <Button
+                                                    icon={<UploadOutlined />}
+                                                  >
+                                                    Tải lên hình ảnh
+                                                  </Button> 
+                                                </Upload>*/}
+                                              </Form.Item>
+                                              <Form.Item
+                                                label="Thứ tự xếp"
+                                                name={[
+                                                  imageField.name,
+                                                  "position",
+                                                ]}
+                                              >
+                                                <Input />
+                                              </Form.Item>
+                                              <Button
+                                                onClick={() =>
+                                                  removeImage(imageField.name)
+                                                }
+                                              >
+                                                Xóa hình ảnh
+                                              </Button>
+                                            </div>
+                                          )
+                                        )}
+                                        <Button
+                                          type="dashed"
+                                          onClick={() => addImage()}
+                                        >
+                                          Thêm hình ảnh
+                                        </Button>
+                                      </>
+                                    )}
+                                  </Form.List>
                                 </Form.Item>
                                 <Button
                                   danger
