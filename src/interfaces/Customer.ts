@@ -1,11 +1,11 @@
-export interface ISupplier {
+export interface ICustomer {
   _id?: object;
-  name?: string;
-  img_url?: string;
+  full_name?: string;
+  image_url?: string;
   email?: string;
   phone_number?: string;
   address?: string;
-  affiliated_website?: string;
+  active?: boolean;
   is_delete?: boolean;
   createdAt?: Date;
   updatedAt?: Date;

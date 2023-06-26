@@ -10,6 +10,8 @@ export interface IProduct {
   description?: string;
   sort_order?: number;
   category?: ICategory;
+  categoryName?: string;
+  subCategory?: string;
   sub_category?: ISubCategory;
   supplier?: ISupplier;
   variants?: [object];

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { axiosClient } from "../../../libraries/axiosClient";
 import { ISupplier } from "../../../interfaces/Supplier";
 import {
@@ -12,20 +12,25 @@ import {
   Upload,
   Space,
   DatePicker,
+  InputRef,
 } from "antd";
 import {
   UploadOutlined,
   EditOutlined,
   DeleteOutlined,
   QuestionCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
-import { API_URL } from "../../../constants/URLS";
 import { columnSuppliers } from "./columnSuppliers";
 import { addedAttribute } from "../../../utils/AddAttributeToColumns";
 import style from "./suppliers.module.css";
 import CustomForm from "../../../components/common/CustomForm";
 import moment from "moment";
+import type { ColumnType, ColumnsType } from "antd/es/table";
+import Highlighter from "react-highlight-words";
+import { FilterConfirmProps } from "antd/es/table/interface";
+import axios from "axios";
+import { API_URL } from "../../../constants/URLS";
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState<ISupplier[]>([]);
@@ -33,6 +38,13 @@ export default function Suppliers() {
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ISupplier>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  //State search
+  type DataIndex = keyof ISupplier;
+  const [searchText, setSearchText] = useState("");
+  const [searchedColumn, setSearchedColumn] = useState("");
+  const searchInput = useRef<InputRef>(null);
+  // File
+  const [file, setFile] = useState<any>();
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
@@ -51,8 +63,162 @@ export default function Suppliers() {
         console.log(err);
       });
   }, [refresh]);
+  //Search
+  const handleSearch = (
+    selectedKeys: string[],
+    confirm: (param?: FilterConfirmProps) => void,
+    dataIndex: DataIndex
+  ) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+
+  const handleReset = (clearFilters: () => void) => {
+    clearFilters();
+    setSearchText("");
+  };
+  const getColumnSearchProps = (
+    dataIndex: DataIndex
+  ): ColumnType<ISupplier> => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+      close,
+    }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() =>
+            handleSearch(selectedKeys as string[], confirm, dataIndex)
+          }
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() =>
+              handleSearch(selectedKeys as string[], confirm, dataIndex)
+            }
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({ closeDropdown: false });
+              setSearchText((selectedKeys as string[])[0]);
+              setSearchedColumn(dataIndex);
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            close
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
+    ),
+    onFilter: (value, record: any) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ""}
+        />
+      ) : (
+        text
+      ),
+  });
+  console.log("sub", suppliers);
 
   const columns: ColumnsType<ISupplier> = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      ...getColumnSearchProps("name"),
+    },
+    {
+      title: "",
+      dataIndex: "img_url",
+      key: "img_url",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="img_supplier"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      ...getColumnSearchProps("email"),
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone_number",
+      key: "phone_number",
+      ...getColumnSearchProps("phone_number"),
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+      key: "address",
+      ...getColumnSearchProps("address"),
+    },
+    {
+      title: "Website",
+      dataIndex: "affiliated_website",
+      key: "affiliated_website",
+      ...getColumnSearchProps("affiliated_website"),
+    },
     {
       title: "",
       key: "actions",
@@ -89,7 +255,7 @@ export default function Suppliers() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/suppliers/" + id, { is_delete: true })
+                    .delete("/suppliers/" + id)
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -110,7 +276,7 @@ export default function Suppliers() {
       },
     },
   ];
-  addedAttribute(columnSuppliers, columns);
+  // addedAttribute(columnSuppliers, columns);
 
   const phoneValidator = (rule: any, value: any, callback: any) => {
     const phoneNumberPattern =
@@ -133,6 +299,21 @@ export default function Suppliers() {
         },
       ],
       component: <Input />,
+    },
+    {
+      name: "file",
+      label: "Hình ảnh",
+      component: (
+        <Upload
+          showUploadList={true}
+          beforeUpload={(file) => {
+            setFile(file);
+            return false;
+          }}
+        >
+          <Button icon={<UploadOutlined />}>Tải lên hình ảnh</Button>
+        </Upload>
+      ),
     },
     {
       name: "email",
@@ -203,10 +384,26 @@ export default function Suppliers() {
       ),
     },
   ];
-  const onFinish = (values: ISupplier) => {
+  const onFinish = (values: any) => {
     axiosClient
       .post("/suppliers", values)
-      .then(() => {
+      .then((response) => {
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/suppliers/${_id}`, formData)
+            .then((response) => {
+              message.success("Tải lên hình ảnh thành công!");
+              // createForm.resetFields();
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              console.log(err);
+            });
+        }
         createForm.resetFields();
         setRefresh((f) => f + 1);
         message.success("Thêm mới thành công!");
@@ -216,18 +413,35 @@ export default function Suppliers() {
         message.error(err.response.data.msg);
         console.log(err);
       });
-    // console.log("👌👌👌", values);
+    console.log("👌👌👌", values);
   };
   const onFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-  const onUpdateFinish = (values: ISupplier) => {
+  const onUpdateFinish = (values: any) => {
     axiosClient
       .patch("/suppliers/" + selectedRecord._id, values)
-      .then(() => {
-        message.success("Cập nhật thành công!");
-        setRefresh((f) => f + 1);
+      .then((response) => {
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/suppliers/${_id}`, formData)
+            .then((response) => {
+              message.success("Cập nhật ảnh thành công!");
+              // createForm.resetFields();
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              console.log(err);
+            });
+        }
+        updateForm.resetFields();
         setEditFormVisible(false);
+        setRefresh((f) => f + 1);
+        message.success("Cập nhật thành công!");
       })
       .catch((err) => {
         message.error("Cập nhật thất bại!");

@@ -1,6 +1,5 @@
-import { ColumnsType } from "antd/es/table";
+import type { ColumnType, ColumnsType } from "antd/es/table";
 import { ICategory } from "../../../interfaces/Category";
-
 export const columnCategories: ColumnsType<ICategory> = [
   {
     title: "Tên",

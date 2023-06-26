@@ -1,52 +1,45 @@
 import { useState, useEffect, useRef } from "react";
-import { axiosClient } from "../../../libraries/axiosClient";
-import { ISubCategory } from "../../../interfaces/SubCategory";
 import {
-  Table,
   Button,
-  Popconfirm,
+  DatePicker,
   Form,
   Input,
-  Modal,
-  message,
-  Upload,
-  Space,
-  DatePicker,
-  Select,
   InputRef,
+  Modal,
+  Popconfirm,
+  Space,
+  Table,
+  Upload,
+  message,
 } from "antd";
-import {
-  UploadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  QuestionCircleOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import type { ColumnType, ColumnsType } from "antd/es/table";
-import { columnSubCategories } from "./columnSubCategories";
-import { addedAttribute } from "../../../utils/AddAttributeToColumns";
-import style from "./subcategories.module.css";
+import style from "./employees.module.css";
+import { axiosClient } from "../../../libraries/axiosClient";
 import CustomForm from "../../../components/common/CustomForm";
-import moment from "moment";
-import Highlighter from "react-highlight-words";
-import { ICategory } from "../../../interfaces/Category";
-import { getAllSubCategories } from "../../../apis/subCategories";
-import { getAllCategories } from "../../../apis/categories";
-import { FilterConfirmProps } from "antd/es/table/interface";
 import axios from "axios";
 import { API_URL } from "../../../constants/URLS";
-
-export default function SubCategories() {
-  const [subCategories, setSubCategories] = useState<ISubCategory[]>([]);
-  const [categories, setCategories] = useState<ICategory[]>([]);
+import {
+  DeleteOutlined,
+  EditOutlined,
+  QuestionCircleOutlined,
+  SearchOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
+import { addedAttribute } from "../../../utils/AddAttributeToColumns";
+import moment from "moment";
+import Highlighter from "react-highlight-words";
+import type { ColumnType, ColumnsType } from "antd/es/table";
+import { IEmployees } from "../../../interfaces/Employees";
+import { FilterConfirmProps } from "antd/es/table/interface";
+export default function Employees() {
+  const [employees, setEmployees] = useState<IEmployees[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<ISubCategory>({});
+  const [selectedRecord, setSelectedRecord] = useState<IEmployees>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
   // File
   const [file, setFile] = useState<any>();
-  //Search
-  type DataIndex = keyof ISubCategory;
+  //State search
+  type DataIndex = keyof IEmployees;
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
   const searchInput = useRef<InputRef>(null);
@@ -54,29 +47,21 @@ export default function SubCategories() {
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   useEffect(() => {
-    const fetchDataSubCategories = async () => {
-      try {
-        const data = await getAllSubCategories();
-        setSubCategories(data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchDataSubCategories();
+    axiosClient
+      .get("/employees")
+      .then((response) => {
+        const filteredEmployees = response.data.filter(
+          (employees: IEmployees) => {
+            return employees.is_delete === false;
+          }
+        );
+        setEmployees(filteredEmployees);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }, [refresh]);
-
-  // get list categories
-  useEffect(() => {
-    const fetchDataCategories = async () => {
-      try {
-        const data = await getAllCategories();
-        setCategories(data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchDataCategories();
-  }, []);
+  //Search
   const handleSearch = (
     selectedKeys: string[],
     confirm: (param?: FilterConfirmProps) => void,
@@ -91,9 +76,10 @@ export default function SubCategories() {
     clearFilters();
     setSearchText("");
   };
+  //search
   const getColumnSearchProps = (
     dataIndex: DataIndex
-  ): ColumnType<ICategory> => ({
+  ): ColumnType<IEmployees> => ({
     filterDropdown: ({
       setSelectedKeys,
       selectedKeys,
@@ -181,31 +167,23 @@ export default function SubCategories() {
         text
       ),
   });
-  const dataSource = subCategories.map((item) => ({
-    ...item,
-    categoryName: item.category?.name,
-  }));
-  const columns: ColumnsType<ISubCategory> = [
+  const columns: ColumnsType<IEmployees> = [
     {
-      title: "Tên",
-      dataIndex: "name",
-      key: "name",
-      ...getColumnSearchProps("name"),
+      title: "Name",
+      dataIndex: "full_name",
+      key: "full_name",
+      ...getColumnSearchProps("full_name"),
     },
     {
       title: "",
-      dataIndex: "image_url",
-      key: "image_url",
-      render: (text, record) => {
+      dataIndex: "avatar",
+      key: "avatar",
+      render: (text) => {
         return (
-          <div style={{ textAlign: "left" }}>
+          <div style={{ textAlign: "center" }}>
             {text && (
               <img
-                style={{
-                  maxWidth: 150,
-                  width: "30%",
-                  minWidth: 70,
-                }}
+                style={{ maxWidth: 150, width: "40%", minWidth: 70 }}
                 src={`${text}`}
                 alt="image_category"
               />
@@ -215,13 +193,27 @@ export default function SubCategories() {
       },
     },
     {
-      title: "Danh mục",
-      dataIndex: "categoryName",
-      key: "categoryName",
-      render: (text, record) => {
-        return <strong>{text}</strong>;
-      },
-      ...getColumnSearchProps("categoryName"),
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      ...getColumnSearchProps("email"),
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone_number",
+      key: "phone_number",
+      ...getColumnSearchProps("phone_number"),
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+      key: "address",
+      ...getColumnSearchProps("address"),
+    },
+    {
+      title: "Năm sinh",
+      dataIndex: "birth_day",
+      key: "birth_day",
     },
     {
       title: "",
@@ -241,10 +233,15 @@ export default function SubCategories() {
                     record.updatedAt,
                     "YYYY-MM-DD HH:mm:ss"
                   );
+                  const formattedBirthday = moment(
+                    record.birth_day,
+                    "YYYY-MM-DD "
+                  );
                   const updatedRecord = {
                     ...record,
                     createdAt: formattedCreatedAt,
                     updatedAt: formattedUpdatedAt,
+                    birth_day: formattedBirthday,
                   };
                   setSelectedRecord(updatedRecord);
                   updateForm.setFieldsValue(updatedRecord);
@@ -259,8 +256,9 @@ export default function SubCategories() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/sub-categories/" + id, { is_delete: true })
+                    .delete("/employees/" + id)
                     .then(() => {
+                      // Gửi yêu cầu xóa ảnh từ Cloudinary
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
                     })
@@ -280,13 +278,31 @@ export default function SubCategories() {
       },
     },
   ];
-  // addedAttribute(columnSubCategories, columns);
-
-  // Handle Form
-  const subcategoryField = [
+  // addedAttribute(columnEmployees, columns);
+  const phoneValidator = (rule: any, value: any, callback: any) => {
+    const phoneNumberPattern =
+      /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/;
+    if (value && !phoneNumberPattern.test(value)) {
+      callback("Invalid phone number!");
+    } else {
+      callback();
+    }
+  };
+  const employeesFields = [
     {
-      name: "name",
-      label: "Name",
+      name: "first_name",
+      label: "Họ",
+      rules: [
+        {
+          required: true,
+          message: "Họ không được để trống!",
+        },
+      ],
+      component: <Input />,
+    },
+    {
+      name: "last_name",
+      label: "Tên",
       rules: [
         {
           required: true,
@@ -311,27 +327,48 @@ export default function SubCategories() {
       ),
     },
     {
-      name: "category_id",
-      label: "Category",
+      name: "email",
+      label: "Email",
       rules: [
         {
           required: true,
-          message: "Danh mục không được để trống!",
+          message: "Email không được để trống!",
+        },
+        { type: "email", message: "Email không hợp lệ!" },
+      ],
+      component: <Input />,
+    },
+    {
+      name: "phone_number",
+      label: "SĐT",
+      rules: [
+        { required: true, message: "Số điện thoại không được để trống!" },
+        {
+          validator: phoneValidator,
         },
       ],
-      component: (
-        <Select
-          options={
-            categories &&
-            categories.map((category) => {
-              return {
-                value: category._id,
-                label: category.name,
-              };
-            })
-          }
-        />
-      ),
+      component: <Input maxLength={10} />,
+    },
+    {
+      name: "address",
+      label: "Địa chỉ",
+      rules: [
+        {
+          required: true,
+          message: "Địa chỉ không được để trống!",
+        },
+      ],
+      component: <Input />,
+    },
+    {
+      name: "birth_day",
+      label: "Năm sinh",
+      rules: [
+        {
+          required: false,
+        },
+      ],
+      component: <DatePicker format={"YYYY/MM/DD - HH:mm:ss"} />,
     },
     {
       name: "createdAt",
@@ -352,6 +389,7 @@ export default function SubCategories() {
       name: "updatedAt",
       label: "Ngày sửa",
       noStyle: createFormVisible ? true : editFormVisible ? false : true,
+      // component: <Input disabled type={createFormVisible ? `hidden` : ``} />,
       component: (
         <DatePicker
           style={{
@@ -365,7 +403,7 @@ export default function SubCategories() {
   ];
   const onFinish = (values: any) => {
     axiosClient
-      .post("/sub-categories", values)
+      .post("/employees", values)
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -373,7 +411,7 @@ export default function SubCategories() {
           const formData = new FormData();
           formData.append("file", file);
           axios
-            .post(`${API_URL}/upload/sub-categories/${_id}`, formData)
+            .post(`${API_URL}/upload/employees/${_id}`, formData)
             .then((response) => {
               message.success("Tải lên hình ảnh thành công!");
               // createForm.resetFields();
@@ -399,7 +437,7 @@ export default function SubCategories() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/sub-categories/" + selectedRecord._id, values)
+      .patch("/employees/" + selectedRecord._id, values)
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -407,7 +445,7 @@ export default function SubCategories() {
           const formData = new FormData();
           formData.append("file", file);
           axios
-            .post(`${API_URL}/upload/sub-categories/${_id}`, formData)
+            .post(`${API_URL}/upload/employees/${_id}`, formData)
             .then((response) => {
               message.success("Cập nhật ảnh thành công!");
               // createForm.resetFields();
@@ -431,22 +469,22 @@ export default function SubCategories() {
   const onUpdateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-
   return (
     <div>
-      <h1>SubCategory List</h1>
+      <h1>Category List</h1>
       <Button
         className={`${style.custom_button}`}
         onClick={() => {
           setCreateFormVisible(true);
         }}
       >
-        Thêm danh mục con
+        Thêm danh mục
       </Button>
+      {/* Cteate Form */}
       <Modal
         centered
         open={createFormVisible}
-        title="Thêm mới danh mục con"
+        title="Thêm mới danh mục"
         onOk={() => {
           createForm.submit();
         }}
@@ -461,13 +499,13 @@ export default function SubCategories() {
           formName={"create-form"}
           onFinish={onFinish}
           onFinishFailed={onFinishFailed}
-          fields={subcategoryField}
+          fields={employeesFields}
         />
       </Modal>
       {/* Update Form */}
       <Modal
         centered
-        title="Cập nhật danh mục con"
+        title="Chỉnh sửa danh mục"
         open={editFormVisible}
         onOk={() => {
           updateForm.submit();
@@ -483,10 +521,10 @@ export default function SubCategories() {
           formName={"update-form"}
           onFinish={onUpdateFinish}
           onFinishFailed={onUpdateFinishFailed}
-          fields={subcategoryField}
+          fields={employeesFields}
         />
       </Modal>
-      <Table rowKey={"_id"} dataSource={dataSource} columns={columns} />
+      <Table rowKey={"_id"} dataSource={employees} columns={columns} />
     </div>
   );
 }

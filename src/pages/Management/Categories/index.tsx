@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { axiosClient } from "../../../libraries/axiosClient";
 import { ICategory } from "../../../interfaces/Category";
+import type { ColumnType, ColumnsType } from "antd/es/table";
 import {
   Table,
   Button,
@@ -12,22 +13,26 @@ import {
   Upload,
   Space,
   DatePicker,
+  InputRef,
 } from "antd";
 import {
   UploadOutlined,
   EditOutlined,
   DeleteOutlined,
   QuestionCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
 import { columnCategories } from "./columnCategories";
 import { addedAttribute } from "../../../utils/AddAttributeToColumns";
-import style from "./categories.module.css";
 import CustomForm from "../../../components/common/CustomForm";
+import style from "./categories.module.css";
 import moment from "moment";
 import axios from "axios";
+import Highlighter from "react-highlight-words";
 import { API_URL } from "../../../constants/URLS";
-
+// import Highlighter from "react-highlight-words";
+import { FilterConfirmProps } from "antd/es/table/interface";
+// import Highlighter from "react-highlight-words";
 export default function Categories() {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [refresh, setRefresh] = useState(0);
@@ -36,6 +41,11 @@ export default function Categories() {
   const [createFormVisible, setCreateFormVisible] = useState(false);
   // File
   const [file, setFile] = useState<any>();
+  //Search
+  const [searchText, setSearchText] = useState("");
+  const [searchedColumn, setSearchedColumn] = useState("");
+  const searchInput = useRef<InputRef>(null);
+  type DataIndex = keyof ICategory;
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
@@ -54,8 +64,146 @@ export default function Categories() {
         console.log(err);
       });
   }, [refresh]);
+  //search
+  const handleSearch = (
+    selectedKeys: string[],
+    confirm: (param?: FilterConfirmProps) => void,
+    dataIndex: DataIndex
+  ) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+
+  const handleReset = (clearFilters: () => void) => {
+    clearFilters();
+    setSearchText("");
+  };
+  const getColumnSearchProps = (
+    dataIndex: DataIndex
+  ): ColumnType<ICategory> => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+      close,
+    }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() =>
+            handleSearch(selectedKeys as string[], confirm, dataIndex)
+          }
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() =>
+              handleSearch(selectedKeys as string[], confirm, dataIndex)
+            }
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({ closeDropdown: false });
+              setSearchText((selectedKeys as string[])[0]);
+              setSearchedColumn(dataIndex);
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            close
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
+    ),
+    onFilter: (value, record: any) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ""}
+        />
+      ) : (
+        text
+      ),
+  });
 
   const columns: ColumnsType<ICategory> = [
+    {
+      title: "Tên",
+      dataIndex: "name",
+      key: "name",
+      ...getColumnSearchProps("name"),
+    },
+    {
+      dataIndex: "image_url",
+      key: "image_url",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_category"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+    },
+    {
+      title: "Ngày sửa",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+    },
     {
       title: "",
       key: "actions",
@@ -92,12 +240,12 @@ export default function Categories() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/categories/" + id, { is_delete: true })
+                    .delete("/categories/" + id)
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
                     })
-                    .catch((err) => {
+                    .catch((err: any) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
                     });
@@ -113,8 +261,7 @@ export default function Categories() {
       },
     },
   ];
-  addedAttribute(columnCategories, columns);
-
+  // addedAttribute(columnCategories, columns);
   // Handle Form
   const categoryField = [
     {
@@ -174,6 +321,7 @@ export default function Categories() {
       ),
     },
   ];
+
   const onFinish = (values: any) => {
     axiosClient
       .post("/categories", values)

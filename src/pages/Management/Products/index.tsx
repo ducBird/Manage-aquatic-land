@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { axiosClient } from "../../../libraries/axiosClient";
 import { IProduct } from "../../../interfaces/Product";
 import {
@@ -14,6 +14,7 @@ import {
   InputNumber,
   DatePicker,
   Select,
+  InputRef,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import {
@@ -21,17 +22,22 @@ import {
   EditOutlined,
   DeleteOutlined,
   QuestionCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
+import type { ColumnType, ColumnsType } from "antd/es/table";
 import { columnProducts } from "./columnProducts";
 import { addedAttribute } from "../../../utils/AddAttributeToColumns";
 import style from "./products.module.css";
 import CustomForm from "../../../components/common/CustomForm";
 import moment from "moment";
+import Highlighter from "react-highlight-words";
 import { ICategory } from "../../../interfaces/Category";
 import { ISubCategory } from "../../../interfaces/SubCategory";
 import { ISupplier } from "../../../interfaces/Supplier";
 import { IVariant } from "../../../interfaces/Variant";
+import { FilterConfirmProps } from "antd/es/table/interface";
+import axios from "axios";
+import { API_URL } from "../../../constants/URLS";
 
 export default function Products() {
   //--- state để render dữ liệu ở columns, productField và xử lý <Select/> trong Form antd ---//
@@ -46,6 +52,8 @@ export default function Products() {
   >([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState();
   const [selectedRecord, setSelectedRecord] = useState<IProduct>({});
+  // File
+  const [file, setFile] = useState<any>();
   //----------------------------------------------------------------//
 
   //--- state quản lý đóng mở Modal ---//
@@ -58,7 +66,11 @@ export default function Products() {
   const [refresh, setRefresh] = useState(0);
   //----------------------------------------------------------------//
   const [variants, setVariants] = useState<IVariant[]>([]);
-
+  //State search
+  type DataIndex = keyof IProduct;
+  const [searchText, setSearchText] = useState("");
+  const [searchedColumn, setSearchedColumn] = useState("");
+  const searchInput = useRef<InputRef>(null);
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
@@ -146,9 +158,171 @@ export default function Products() {
         console.log(err);
       });
   }, []);
+  //Search
+  const handleSearch = (
+    selectedKeys: string[],
+    confirm: (param?: FilterConfirmProps) => void,
+    dataIndex: DataIndex
+  ) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
 
+  const handleReset = (clearFilters: () => void) => {
+    clearFilters();
+    setSearchText("");
+  };
+  //search
+  const getColumnSearchProps = (
+    dataIndex: DataIndex
+  ): ColumnType<IProduct> => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+      close,
+    }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() =>
+            handleSearch(selectedKeys as string[], confirm, dataIndex)
+          }
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() =>
+              handleSearch(selectedKeys as string[], confirm, dataIndex)
+            }
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({ closeDropdown: false });
+              setSearchText((selectedKeys as string[])[0]);
+              setSearchedColumn(dataIndex);
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            close
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
+    ),
+    onFilter: (value, record: any) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ""}
+        />
+      ) : (
+        text
+      ),
+  });
+
+  const dataSource = products.map((item) => ({
+    ...item,
+    categoryName: item.category?.name,
+    subCategory: item.sub_category?.name,
+  }));
+
+  console.log(dataSource.map((item) => item.categoryName));
+  console.log(dataSource.length);
   // Columns Table
   const columns: ColumnsType<IProduct> = [
+    {
+      title: "Danh mục",
+      dataIndex: "categoryName",
+      key: "categoryName",
+      render: (text, record) => <strong>{text}</strong>,
+      ...getColumnSearchProps("categoryName"),
+    },
+    {
+      title: "Danh mục con",
+      dataIndex: "subCategory",
+      key: "subCategory",
+      render: (text, record) => {
+        return <strong>{text}</strong>;
+      },
+      ...getColumnSearchProps("subCategory"),
+    },
+    {
+      dataIndex: "product_image",
+      key: "product_image",
+      width: "20%",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_products"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Tên sản phẩm",
+      dataIndex: "name",
+      key: "name",
+      ...getColumnSearchProps("name"),
+    },
+    {
+      title: "Giảm giá",
+      dataIndex: "discount",
+      key: "discount",
+      render: (text) => {
+        return <div>{text}%</div>;
+      },
+    },
     {
       title: "",
       key: "actions",
@@ -207,7 +381,7 @@ export default function Products() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/products/" + id, { is_delete: true })
+                    .delete("/products/" + id)
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -228,7 +402,7 @@ export default function Products() {
       },
     },
   ];
-  addedAttribute(columnProducts, columns);
+  // addedAttribute(columnProducts, columns);
 
   // Handle Form
   const handleCategoryChange = (value: any) => {
@@ -453,10 +627,41 @@ export default function Products() {
     // },
   ];
 
-  const onCreateFinish = (values: IProduct) => {
+  // const onCreateFinish = (values: IProduct) => {
+  //   axiosClient
+  //     .post("/products", values)
+  //     .then(() => {
+  //       createForm.resetFields();
+  //       setRefresh((f) => f + 1);
+  //       message.success("Thêm mới thành công!");
+  //     })
+  //     .catch((err) => {
+  //       message.error("Thêm mới thất bại!");
+  //       message.error(err.response.data.msg);
+  //       console.log(err);
+  //     });
+  //   // console.log("👌👌👌", values);
+  // };
+  const onCreateFinish = (values: any) => {
     axiosClient
       .post("/products", values)
-      .then(() => {
+      .then((response) => {
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/products/${_id}`, formData)
+            .then((response) => {
+              message.success("Tải lên hình ảnh thành công!");
+              // createForm.resetFields();
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              console.log(err);
+            });
+        }
         createForm.resetFields();
         setRefresh((f) => f + 1);
         message.success("Thêm mới thành công!");
@@ -466,7 +671,7 @@ export default function Products() {
         message.error(err.response.data.msg);
         console.log(err);
       });
-    // console.log("👌👌👌", values);
+    console.log("👌👌👌", values);
   };
   const onCreateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
@@ -669,7 +874,7 @@ export default function Products() {
           </Form.List>
         </Form>
       </Modal>
-      <Table rowKey={"_id"} dataSource={products} columns={columns} />
+      <Table rowKey={"_id"} dataSource={dataSource} columns={columns} />
     </div>
   );
 }
