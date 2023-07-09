@@ -42,7 +42,7 @@ function App() {
                   />
                   <Route path="/management/products" element={<Products />} />
                   <Route
-                    path="/management/sub-categories"
+                    path="/management/subCategories"
                     element={<SubCategories />}
                   />
                   <Route path="/management/suppliers" element={<Suppliers />} />

@@ -30,19 +30,27 @@ import CustomForm from "../../../components/common/CustomForm";
 import moment from "moment";
 import Highlighter from "react-highlight-words";
 import { ICategory } from "../../../interfaces/Category";
-import { getAllSubCategories } from "../../../apis/subCategories";
+import {
+  getAllSubCategories,
+  getAllDeleteSubCategories,
+} from "../../../apis/subCategories";
 import { getAllCategories } from "../../../apis/categories";
 import { FilterConfirmProps } from "antd/es/table/interface";
 import axios from "axios";
 import { API_URL } from "../../../constants/URLS";
+import { FaTrashRestore } from "react-icons/fa";
 
 export default function SubCategories() {
   const [subCategories, setSubCategories] = useState<ISubCategory[]>([]);
+  const [subIsDeleteCategories, setSubIsDeleteCategories] = useState<
+    ISubCategory[]
+  >([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ISubCategory>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  const [editFormDelete, setEditFormDelete] = useState(false);
   // File
   const [file, setFile] = useState<any>();
   //Search
@@ -65,6 +73,17 @@ export default function SubCategories() {
     fetchDataSubCategories();
   }, [refresh]);
 
+  useEffect(() => {
+    const fetchDataDeleteSubCategories = async () => {
+      try {
+        const data = await getAllDeleteSubCategories();
+        setSubIsDeleteCategories(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchDataDeleteSubCategories();
+  }, [refresh]);
   // get list categories
   useEffect(() => {
     const fetchDataCategories = async () => {
@@ -280,6 +299,96 @@ export default function SubCategories() {
       },
     },
   ];
+  const isDeleteColumns: ColumnsType<ISubCategory> = [
+    {
+      title: "",
+      dataIndex: "image_url",
+      key: "image_url",
+      render: (text, record) => {
+        return (
+          <div style={{ textAlign: "left" }}>
+            {text && (
+              <img
+                style={{
+                  maxWidth: 150,
+                  width: "30%",
+                  minWidth: 70,
+                }}
+                src={`${text}`}
+                alt="image_category"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Tên",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Danh mục",
+      dataIndex: "categoryName",
+      key: "categoryName",
+      render: (text, record) => {
+        return <strong>{text}</strong>;
+      },
+    },
+    {
+      title: "Chức năng",
+      key: "actions",
+      render: (record) => {
+        return (
+          <div>
+            <Space>
+              {/* Button Delete */}
+              <Popconfirm
+                icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                onConfirm={() => {
+                  const id = record._id;
+                  axiosClient
+                    .delete("/sub-categories/" + id)
+                    .then(() => {
+                      message.success("Xóa thành công!");
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Xóa thất bại!");
+                    });
+                }}
+                okText="Có"
+                cancelText="Không"
+              >
+                <Button danger icon={<DeleteOutlined />}></Button>
+              </Popconfirm>
+              <Button
+                onClick={() => {
+                  const id = record._id;
+                  console.log("id", id);
+                  axiosClient
+                    .patch("/sub-categories/" + id, { is_delete: false })
+                    .then((response) => {
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Thất bại !!!");
+                    });
+                }}
+                className=""
+              >
+                <FaTrashRestore size={"16px"} style={{ marginRight: "5px" }} />
+                Restore
+              </Button>
+            </Space>
+          </div>
+        );
+      },
+    },
+  ];
   // addedAttribute(columnSubCategories, columns);
 
   // Handle Form
@@ -435,14 +544,30 @@ export default function SubCategories() {
   return (
     <div>
       <h1>SubCategory List</h1>
-      <Button
-        className={`${style.custom_button}`}
-        onClick={() => {
-          setCreateFormVisible(true);
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "10px 0",
         }}
       >
-        Thêm danh mục con
-      </Button>
+        <Button
+          className={`${style.custom_button}`}
+          onClick={() => {
+            setCreateFormVisible(true);
+          }}
+        >
+          Thêm danh mục
+        </Button>
+        <Button
+          danger
+          onClick={() => {
+            setEditFormDelete(true);
+          }}
+        >
+          Các danh mục đã xóa
+        </Button>
+      </div>
       <Modal
         centered
         open={createFormVisible}
@@ -487,6 +612,18 @@ export default function SubCategories() {
         />
       </Modal>
       <Table rowKey={"_id"} dataSource={dataSource} columns={columns} />
+      <Modal
+        open={editFormDelete}
+        onCancel={() => {
+          setEditFormDelete(false);
+        }}
+      >
+        <Table
+          rowKey={"_id"}
+          dataSource={subIsDeleteCategories}
+          columns={isDeleteColumns}
+        />
+      </Modal>
     </div>
   );
 }

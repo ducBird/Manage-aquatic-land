@@ -36,10 +36,14 @@ import { ISubCategory } from "../../../interfaces/SubCategory";
 import { ISupplier } from "../../../interfaces/Supplier";
 import { IVariant } from "../../../interfaces/Variant";
 import { FilterConfirmProps } from "antd/es/table/interface";
+import axios from "axios";
+import { API_URL } from "../../../constants/URLS";
+import { FaTrashRestore } from "react-icons/fa";
 
 export default function Products() {
   //--- state để render dữ liệu ở columns, productField và xử lý <Select/> trong Form antd ---//
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [isProducts, setIsProducts] = useState<IProduct[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [suppliers, setSuppliers] = useState<ISupplier[]>([]);
   const [subCategoriesCreateForm, setSubCategoriesCreateForm] = useState<
@@ -50,6 +54,7 @@ export default function Products() {
   >([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState();
   const [selectedRecord, setSelectedRecord] = useState<IProduct>({});
+  const [editFormDelete, setEditFormDelete] = useState(false);
   // File
   const [file, setFile] = useState<any>();
   //----------------------------------------------------------------//
@@ -83,6 +88,21 @@ export default function Products() {
           return product.is_delete === false;
         });
         setProducts(filteredProducts);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [refresh]);
+  useEffect(() => {
+    axiosClient
+      .get("/products")
+      .then((response) => {
+        const filterDeleteProducts = response.data.filter(
+          (product: IProduct) => {
+            return product.is_delete === true;
+          }
+        );
+        setIsProducts(filterDeleteProducts);
       })
       .catch((err) => {
         console.log(err);
@@ -379,6 +399,65 @@ export default function Products() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
+                    .patch("/products/" + id, { is_delete: true })
+                    .then(() => {
+                      message.success("Xóa thành công!");
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Xóa thất bại!");
+                    });
+                }}
+                okText="Có"
+                cancelText="Không"
+              >
+                <Button danger icon={<DeleteOutlined />}></Button>
+              </Popconfirm>
+            </Space>
+          </div>
+        );
+      },
+    },
+  ];
+  const isDeletColumns: ColumnsType<IProduct> = [
+    {
+      dataIndex: "product_image",
+      key: "product_image",
+      width: "20%",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_products"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Tên sản phẩm",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (record) => {
+        return (
+          <div>
+            <Space>
+              {/* Button Delete */}
+              <Popconfirm
+                icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                onConfirm={() => {
+                  const id = record._id;
+                  axiosClient
                     .delete("/products/" + id)
                     .then(() => {
                       message.success("Xóa thành công!");
@@ -394,6 +473,25 @@ export default function Products() {
               >
                 <Button danger icon={<DeleteOutlined />}></Button>
               </Popconfirm>
+              <Button
+                onClick={() => {
+                  const id = record._id;
+                  console.log("id", id);
+                  axiosClient
+                    .patch("/products/" + id, { is_delete: false })
+                    .then((response) => {
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Thất bại !!!");
+                    });
+                }}
+                className=""
+              >
+                <FaTrashRestore size={"16px"} style={{ marginRight: "5px" }} />
+                Restore
+              </Button>
             </Space>
           </div>
         );
@@ -747,14 +845,30 @@ export default function Products() {
   return (
     <div>
       <h1>Product List</h1>
-      <Button
-        className={`${style.custom_button}`}
-        onClick={() => {
-          setCreateFormVisible(true);
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "10px 0",
         }}
       >
-        Thêm sản phẩm
-      </Button>
+        <Button
+          className={`${style.custom_button}`}
+          onClick={() => {
+            setCreateFormVisible(true);
+          }}
+        >
+          Thêm sản phẩm
+        </Button>
+        <Button
+          danger
+          onClick={() => {
+            setEditFormDelete(true);
+          }}
+        >
+          Các danh mục đã xóa
+        </Button>
+      </div>
       {/* --- CREATE PRODUCT FORM --- */}
       <Modal
         centered
@@ -979,6 +1093,18 @@ export default function Products() {
         </Form>
       </Modal>
       <Table rowKey={"_id"} dataSource={dataSource} columns={columns} />
+      <Modal
+        open={editFormDelete}
+        onCancel={() => {
+          setEditFormDelete(false);
+        }}
+      >
+        <Table
+          rowKey={"_id"}
+          dataSource={isProducts}
+          columns={isDeletColumns}
+        />
+      </Modal>
     </div>
   );
 }
