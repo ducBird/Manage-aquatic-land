@@ -471,14 +471,14 @@ export default function Employees() {
   };
   return (
     <div>
-      <h1>Category List</h1>
+      <h1>Employees List</h1>
       <Button
         className={`${style.custom_button}`}
         onClick={() => {
           setCreateFormVisible(true);
         }}
       >
-        Thêm danh mục
+        Thêm Nhân Viên
       </Button>
       {/* Cteate Form */}
       <Modal

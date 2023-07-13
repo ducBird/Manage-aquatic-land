@@ -32,6 +32,7 @@ import Highlighter from "react-highlight-words";
 import { API_URL } from "../../../constants/URLS";
 // import Highlighter from "react-highlight-words";
 import { FilterConfirmProps } from "antd/es/table/interface";
+import { useUser } from "../../../hooks/useUser";
 // import Highlighter from "react-highlight-words";
 export default function Categories() {
   const [categories, setCategories] = useState<ICategory[]>([]);
@@ -49,9 +50,13 @@ export default function Categories() {
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+  //
+  const { users } = useUser((state) => state);
   useEffect(() => {
     axiosClient
-      .get("/categories")
+      .get("/categories", {
+        headers: { access_token: `Bearer ${users.access_token}` },
+      })
       .then((response) => {
         const filteredCategories = response.data.filter(
           (category: ICategory) => {
@@ -61,6 +66,7 @@ export default function Categories() {
         setCategories(filteredCategories);
       })
       .catch((err) => {
+        message.error(err.response.data);
         console.log(err);
       });
   }, [refresh]);
@@ -240,7 +246,9 @@ export default function Categories() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .delete("/categories/" + id)
+                    .delete("/categories/" + id, {
+                      headers: { access_token: `Bearer ${users.access_token}` },
+                    })
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -248,6 +256,7 @@ export default function Categories() {
                     .catch((err: any) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
+                      message.error(err.response.data);
                     });
                 }}
                 okText="Có"
@@ -324,7 +333,9 @@ export default function Categories() {
 
   const onFinish = (values: any) => {
     axiosClient
-      .post("/categories", values)
+      .post("/categories", values, {
+        headers: { access_token: `Bearer ${users.access_token}` },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -339,6 +350,7 @@ export default function Categories() {
             })
             .catch((err) => {
               message.error("Tải lên hình ảnh thất bại!");
+              message.error(err.response.data);
               console.log(err);
             });
         }
@@ -348,7 +360,7 @@ export default function Categories() {
       })
       .catch((err) => {
         message.error("Thêm mới thất bại!");
-        message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
     console.log("👌👌👌", values);
@@ -358,7 +370,9 @@ export default function Categories() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/categories/" + selectedRecord._id, values)
+      .patch("/categories/" + selectedRecord._id, values, {
+        headers: { access_token: `Bearer ${users.access_token}` },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -383,7 +397,8 @@ export default function Categories() {
       })
       .catch((err) => {
         message.error("Cập nhật thất bại!");
-        message.error(err.response.data.msg);
+        // message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };

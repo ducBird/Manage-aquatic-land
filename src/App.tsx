@@ -1,4 +1,5 @@
 import "./App.css";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "antd";
 import HeaderMenu from "./components/layout/HeaderMenu";
@@ -9,20 +10,45 @@ import SubCategories from "./pages/Management/SubCategories";
 import Suppliers from "./pages/Management/Suppliers";
 import Customers from "./pages/Management/Customers";
 import Employees from "./pages/Management/Employees";
+import HomePage from "./pages/Home";
+import Login from "./pages/Login";
+import { useUser } from "./hooks/useUser";
 
 const { Header, Content, Sider } = Layout;
 
 function App() {
+  const { initialize, refreshToken } = useUser();
+
+  useEffect(() => {
+    initialize();
+
+    // Thiết lập interval để tự động làm mới token mỗi 10 phút
+    const refreshInterval = setInterval(() => {
+      refreshToken();
+    }, 10 * 60 * 1000);
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, []);
   return (
     <main>
       <BrowserRouter>
         <Layout>
           <Header className="header">
-            <HeaderMenu />
+            {window.localStorage.getItem("refresh_token") ? (
+              <HeaderMenu />
+            ) : (
+              <></>
+            )}
           </Header>
           <Layout>
             <Sider theme="light" width={"20%"} style={{ minHeight: "100vh" }}>
-              <SiderMenu />
+              {window.localStorage.getItem("refresh_token") ? (
+                <SiderMenu />
+              ) : (
+                <></>
+              )}
             </Sider>
             <Layout
               style={{
@@ -36,6 +62,15 @@ function App() {
                 }}
               >
                 <Routes>
+                  {/* HOME */}
+                  {window.localStorage.getItem("refresh_token") ? (
+                    <Route path="/" element={<HomePage />} />
+                  ) : (
+                    <Route path="/" element={<Login />} />
+                  )}
+
+                  {/* HOME */}
+                  <Route path="/home" element={<HomePage />} />
                   <Route
                     path="/management/categories"
                     element={<Categories />}

@@ -29,6 +29,7 @@ import moment from "moment";
 import Highlighter from "react-highlight-words";
 import type { ColumnType, ColumnsType } from "antd/es/table";
 import { FilterConfirmProps } from "antd/es/table/interface";
+import { useUser } from "../../../hooks/useUser";
 export default function Customers() {
   const [customers, setCustomers] = useState<ICustomer[]>([]);
   const [refresh, setRefresh] = useState(0);
@@ -45,9 +46,13 @@ export default function Customers() {
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+  //
+  const { users } = useUser((state) => state);
   useEffect(() => {
     axiosClient
-      .get("/customers")
+      .get("/customers", {
+        headers: { access_token: `Bearer ${users.access_token}` },
+      })
       .then((response) => {
         const filteredCustomers = response.data.filter(
           (customers: ICustomer) => {
@@ -57,6 +62,7 @@ export default function Customers() {
         setCustomers(filteredCustomers);
       })
       .catch((err) => {
+        message.error(err.response.data);
         console.log(err);
       });
   }, [refresh]);
@@ -481,7 +487,7 @@ export default function Customers() {
           setCreateFormVisible(true);
         }}
       >
-        Thêm danh mục
+        Thêm khách hàng
       </Button>
       {/* Cteate Form */}
       <Modal
