@@ -30,12 +30,16 @@ import Highlighter from "react-highlight-words";
 import type { ColumnType, ColumnsType } from "antd/es/table";
 import { FilterConfirmProps } from "antd/es/table/interface";
 import { useUser } from "../../../hooks/useUser";
+import { AiFillDelete, AiFillQuestionCircle } from "react-icons/ai";
+import { FaTrashRestore } from "react-icons/fa";
 export default function Customers() {
   const [customers, setCustomers] = useState<ICustomer[]>([]);
+  const [isDelete, setIsDelete] = useState<ICustomer[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ICustomer>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  const [editFormDelete, setEditFormDelete] = useState(false);
   // File
   const [file, setFile] = useState<any>();
   //State search
@@ -63,6 +67,21 @@ export default function Customers() {
       })
       .catch((err) => {
         message.error(err.response.data);
+        console.log(err);
+      });
+  }, [refresh]);
+  useEffect(() => {
+    axiosClient
+      .get("/customers")
+      .then((response) => {
+        const filterDeleteCustomers = response.data.filter(
+          (customers: ICustomer) => {
+            return customers.is_delete === true;
+          }
+        );
+        setIsDelete(filterDeleteCustomers);
+      })
+      .catch((err) => {
         console.log(err);
       });
   }, [refresh]);
@@ -265,7 +284,9 @@ export default function Customers() {
                   const publicId = record.id;
                   console.log("publicId", publicId);
                   try {
-                    await axiosClient.delete(`/customers/${id}`);
+                    await axiosClient.patch(`/customers/${id}`, {
+                      is_delete: true,
+                    });
                     await axios.delete(
                       `${API_URL}/upload/delete-image/${publicId}`
                     );
@@ -410,6 +431,86 @@ export default function Customers() {
       ),
     },
   ];
+  const isDeleteColoumn: ColumnsType<ICustomer> = [
+    {
+      title: "",
+      dataIndex: "avatar",
+      key: "avatar",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "40%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_category"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Name",
+      dataIndex: "full_name",
+      key: "full_name",
+    },
+    {
+      title: " Chức năng",
+      render: (text: any, record: any) => {
+        return (
+          <div className="flex">
+            <Popconfirm
+              icon={<AiFillQuestionCircle size={"24px"} className="" />}
+              title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+              onConfirm={() => {
+                const id = record._id;
+                axiosClient
+                  .delete("/customers/" + id)
+                  //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
+                  .then((response) => {
+                    message.success("Đã xóa thành công");
+                    setRefresh((f) => f + 1);
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    message.error("Thất bại !!!");
+                  });
+              }}
+              okText="Có"
+              cancelText="Không"
+            >
+              <Button danger className=" ">
+                {" "}
+                <AiFillDelete size={"16px"} style={{ marginRight: "5px" }} />
+                Xóa
+              </Button>
+            </Popconfirm>
+            <Button
+              onClick={() => {
+                const id = record._id;
+                console.log("id", id);
+                axiosClient
+                  .patch("/customers/" + id, { is_delete: false })
+                  .then((response) => {
+                    setRefresh((f) => f + 1);
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    message.error("Thất bại !!!");
+                  });
+              }}
+              className=""
+            >
+              <FaTrashRestore size={"16px"} style={{ marginRight: "5px" }} />
+              Restore
+            </Button>
+          </div>
+        );
+      },
+    },
+    {},
+  ];
   const onFinish = (values: any) => {
     axiosClient
       .post("/customers", values)
@@ -481,14 +582,30 @@ export default function Customers() {
   return (
     <div>
       <h1>Customers List</h1>
-      <Button
-        className={`${style.custom_button}`}
-        onClick={() => {
-          setCreateFormVisible(true);
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "10px 0",
         }}
       >
-        Thêm khách hàng
-      </Button>
+        <Button
+          className={`${style.custom_button}`}
+          onClick={() => {
+            setCreateFormVisible(true);
+          }}
+        >
+          Thêm khách hàng
+        </Button>
+        <Button
+          danger
+          onClick={() => {
+            setEditFormDelete(true);
+          }}
+        >
+          Các khách hàng đã xóa
+        </Button>
+      </div>
       {/* Cteate Form */}
       <Modal
         centered
@@ -534,6 +651,15 @@ export default function Customers() {
         />
       </Modal>
       <Table rowKey={"_id"} dataSource={customers} columns={columns} />
+
+      <Modal
+        open={editFormDelete}
+        onCancel={() => {
+          setEditFormDelete(false);
+        }}
+      >
+        <Table rowKey={"_id"} dataSource={isDelete} columns={isDeleteColoumn} />
+      </Modal>
     </div>
   );
 }

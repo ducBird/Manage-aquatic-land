@@ -31,13 +31,16 @@ import Highlighter from "react-highlight-words";
 import { FilterConfirmProps } from "antd/es/table/interface";
 import axios from "axios";
 import { API_URL } from "../../../constants/URLS";
+import { FaTrashRestore } from "react-icons/fa";
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState<ISupplier[]>([]);
+  const [suppliersIsDelete, setSuppliersIsDelete] = useState<ISupplier[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ISupplier>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  const [editFormDelete, setEditFormDelete] = useState(false);
   //State search
   type DataIndex = keyof ISupplier;
   const [searchText, setSearchText] = useState("");
@@ -58,6 +61,21 @@ export default function Suppliers() {
           }
         );
         setSuppliers(filteredSuppliers);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [refresh]);
+  useEffect(() => {
+    axiosClient
+      .get("/suppliers")
+      .then((response) => {
+        const filterDeleteSuppliers = response.data.filter(
+          (supplier: ISupplier) => {
+            return supplier.is_delete === true;
+          }
+        );
+        setSuppliersIsDelete(filterDeleteSuppliers);
       })
       .catch((err) => {
         console.log(err);
@@ -255,6 +273,66 @@ export default function Suppliers() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
+                    .patch("/suppliers/" + id, { is_delete: true })
+                    .then(() => {
+                      message.success("Xóa thành công!");
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Xóa thất bại!");
+                    });
+                }}
+                okText="Có"
+                cancelText="Không"
+              >
+                <Button danger icon={<DeleteOutlined />}></Button>
+              </Popconfirm>
+            </Space>
+          </div>
+        );
+      },
+    },
+  ];
+  const columnsDelete: ColumnsType<ISupplier> = [
+    {
+      title: "",
+      dataIndex: "img_url",
+      key: "img_url",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="img_supplier"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+    },
+
+    {
+      title: "Chức năng",
+      key: "actions",
+      render: (record) => {
+        return (
+          <div>
+            <Space>
+              {/* Button Delete */}
+              <Popconfirm
+                icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                onConfirm={() => {
+                  const id = record._id;
+                  axiosClient
                     .delete("/suppliers/" + id)
                     .then(() => {
                       message.success("Xóa thành công!");
@@ -270,6 +348,25 @@ export default function Suppliers() {
               >
                 <Button danger icon={<DeleteOutlined />}></Button>
               </Popconfirm>
+              <Button
+                onClick={() => {
+                  const id = record._id;
+                  console.log("id", id);
+                  axiosClient
+                    .patch("/suppliers/" + id, { is_delete: false })
+                    .then((response) => {
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Thất bại !!!");
+                    });
+                }}
+                className=""
+              >
+                <FaTrashRestore size={"16px"} style={{ marginRight: "5px" }} />
+                Restore
+              </Button>
             </Space>
           </div>
         );
@@ -456,14 +553,30 @@ export default function Suppliers() {
   return (
     <div>
       <h1>Supplier List</h1>
-      <Button
-        className={`${style.custom_button}`}
-        onClick={() => {
-          setCreateFormVisible(true);
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "10px 0",
         }}
       >
-        Thêm nhà cung cấp
-      </Button>
+        <Button
+          className={`${style.custom_button}`}
+          onClick={() => {
+            setCreateFormVisible(true);
+          }}
+        >
+          Thêm danh mục
+        </Button>
+        <Button
+          danger
+          onClick={() => {
+            setEditFormDelete(true);
+          }}
+        >
+          Các danh mục đã xóa
+        </Button>
+      </div>
       <Modal
         centered
         open={createFormVisible}
@@ -508,6 +621,18 @@ export default function Suppliers() {
         />
       </Modal>
       <Table rowKey={"_id"} dataSource={suppliers} columns={columns} />
+      <Modal
+        open={editFormDelete}
+        onCancel={() => {
+          setEditFormDelete(false);
+        }}
+      >
+        <Table
+          rowKey={"_id"}
+          dataSource={suppliersIsDelete}
+          columns={columnsDelete}
+        />
+      </Modal>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import {
   AiOutlineSetting,
   AiOutlineShopping,
   AiOutlineDatabase,
+  AiOutlineDiff,
 } from "react-icons/ai";
 import {
   MdOutlineSupportAgent,
@@ -30,6 +31,11 @@ export default function SiderMenu() {
           label: "Danh mục",
           key: "management-categories",
           icon: <MdOutlineCategory />,
+        },
+        {
+          label: "Danh mục phụ",
+          key: "management-subCategories",
+          icon: <AiOutlineDiff />,
         },
         {
           label: "Sản phẩm",

@@ -30,12 +30,15 @@ import Highlighter from "react-highlight-words";
 import type { ColumnType, ColumnsType } from "antd/es/table";
 import { IEmployees } from "../../../interfaces/Employees";
 import { FilterConfirmProps } from "antd/es/table/interface";
+import { FaTrashRestore } from "react-icons/fa";
 export default function Employees() {
   const [employees, setEmployees] = useState<IEmployees[]>([]);
+  const [isEmployees, setIsEmployees] = useState<IEmployees[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IEmployees>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  const [editFormDelete, setEditFormDelete] = useState(false);
   // File
   const [file, setFile] = useState<any>();
   //State search
@@ -56,6 +59,21 @@ export default function Employees() {
           }
         );
         setEmployees(filteredEmployees);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [refresh]);
+  useEffect(() => {
+    axiosClient
+      .get("/employees")
+      .then((response) => {
+        const filterIsDeleteEmployees = response.data.filter(
+          (employees: IEmployees) => {
+            return employees.is_delete === true;
+          }
+        );
+        setIsEmployees(filterIsDeleteEmployees);
       })
       .catch((err) => {
         console.log(err);
@@ -256,6 +274,68 @@ export default function Employees() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
+                    .patch("/employees/" + id, { is_delete: true })
+                    .then(() => {
+                      // Gửi yêu cầu xóa ảnh từ Cloudinary
+                      message.success("Xóa thành công!");
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Xóa thất bại!");
+                    });
+                }}
+                okText="Có"
+                cancelText="Không"
+              >
+                <Button danger icon={<DeleteOutlined />}></Button>
+              </Popconfirm>
+            </Space>
+          </div>
+        );
+      },
+    },
+  ];
+  const isDeleteColumns: ColumnsType<IEmployees> = [
+    {
+      title: "",
+      dataIndex: "avatar",
+      key: "avatar",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "40%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_category"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Name",
+      dataIndex: "full_name",
+      key: "full_name",
+      ...getColumnSearchProps("full_name"),
+    },
+    {
+      title: "Chức năng",
+      key: "actions",
+      render: (record) => {
+        return (
+          <div>
+            <Space>
+              {/* Button Edit */}
+              {/* Button Delete */}
+              <Popconfirm
+                icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                onConfirm={() => {
+                  const id = record._id;
+                  axiosClient
                     .delete("/employees/" + id)
                     .then(() => {
                       // Gửi yêu cầu xóa ảnh từ Cloudinary
@@ -272,6 +352,25 @@ export default function Employees() {
               >
                 <Button danger icon={<DeleteOutlined />}></Button>
               </Popconfirm>
+              <Button
+                onClick={() => {
+                  const id = record._id;
+                  console.log("id", id);
+                  axiosClient
+                    .patch("/employees/" + id, { is_delete: false })
+                    .then((response) => {
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      message.error("Thất bại !!!");
+                    });
+                }}
+                className=""
+              >
+                <FaTrashRestore size={"16px"} style={{ marginRight: "5px" }} />
+                Restore
+              </Button>
             </Space>
           </div>
         );
@@ -472,19 +571,35 @@ export default function Employees() {
   return (
     <div>
       <h1>Employees List</h1>
-      <Button
-        className={`${style.custom_button}`}
-        onClick={() => {
-          setCreateFormVisible(true);
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "10px 0",
         }}
       >
-        Thêm Nhân Viên
-      </Button>
+        <Button
+          className={`${style.custom_button}`}
+          onClick={() => {
+            setCreateFormVisible(true);
+          }}
+        >
+          Thêm nhân viên
+        </Button>
+        <Button
+          danger
+          onClick={() => {
+            setEditFormDelete(true);
+          }}
+        >
+          Các nhân viên đã xóa
+        </Button>
+      </div>
       {/* Cteate Form */}
       <Modal
         centered
         open={createFormVisible}
-        title="Thêm mới danh mục"
+        title="Thêm mới nhân viên"
         onOk={() => {
           createForm.submit();
         }}
@@ -505,7 +620,7 @@ export default function Employees() {
       {/* Update Form */}
       <Modal
         centered
-        title="Chỉnh sửa danh mục"
+        title="Chỉnh sửa nhân viên"
         open={editFormVisible}
         onOk={() => {
           updateForm.submit();
@@ -525,6 +640,18 @@ export default function Employees() {
         />
       </Modal>
       <Table rowKey={"_id"} dataSource={employees} columns={columns} />
+      <Modal
+        open={editFormDelete}
+        onCancel={() => {
+          setEditFormDelete(false);
+        }}
+      >
+        <Table
+          rowKey={"_id"}
+          dataSource={isEmployees}
+          columns={isDeleteColumns}
+        />
+      </Modal>
     </div>
   );
 }

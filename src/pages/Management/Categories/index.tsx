@@ -33,13 +33,17 @@ import { API_URL } from "../../../constants/URLS";
 // import Highlighter from "react-highlight-words";
 import { FilterConfirmProps } from "antd/es/table/interface";
 import { useUser } from "../../../hooks/useUser";
+import { AiFillDelete, AiFillQuestionCircle } from "react-icons/ai";
+import { FaTrashRestore } from "react-icons/fa";
 // import Highlighter from "react-highlight-words";
 export default function Categories() {
   const [categories, setCategories] = useState<ICategory[]>([]);
+  const [isDelete, setIsDelete] = useState<ICategory[]>([]);
   const [refresh, setRefresh] = useState(0);
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ICategory>({});
   const [createFormVisible, setCreateFormVisible] = useState(false);
+  const [editFormDelete, setEditFormDelete] = useState(false);
   // File
   const [file, setFile] = useState<any>();
   //Search
@@ -67,6 +71,22 @@ export default function Categories() {
       })
       .catch((err) => {
         message.error(err.response.data);
+        console.log(err);
+      });
+  }, [refresh]);
+
+  useEffect(() => {
+    axiosClient
+      .get("/categories")
+      .then((response) => {
+        const filterIsDeleteCategories = response.data.filter(
+          (category: ICategory) => {
+            return category.is_delete === true;
+          }
+        );
+        setIsDelete(filterIsDeleteCategories);
+      })
+      .catch((err) => {
         console.log(err);
       });
   }, [refresh]);
@@ -246,9 +266,7 @@ export default function Categories() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .delete("/categories/" + id, {
-                      headers: { access_token: `Bearer ${users.access_token}` },
-                    })
+                    .patch("/categories/" + id, { is_delete: true })
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -269,6 +287,87 @@ export default function Categories() {
         );
       },
     },
+  ];
+  const isDeleteColoumn: ColumnsType<ICategory> = [
+    {
+      dataIndex: "image_url",
+      key: "image_url",
+      render: (text: any) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_category"
+              />
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Tên",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: " Chức năng",
+      render: (text: any, record: any) => {
+        return (
+          <div className="flex">
+            <Popconfirm
+              icon={<AiFillQuestionCircle size={"24px"} className="" />}
+              title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+              onConfirm={() => {
+                const id = record._id;
+                axiosClient
+                  .delete("/categories/" + id, {
+                    headers: { access_token: `Bearer ${users.access_token}` },
+                  })
+                  //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
+                  .then((response) => {
+                    message.success("Đã xóa thành công");
+                    setRefresh((f) => f + 1);
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    message.error("Thất bại !!!");
+                  });
+              }}
+              okText="Có"
+              cancelText="Không"
+            >
+              <Button danger className=" ">
+                {" "}
+                <AiFillDelete size={"16px"} style={{ marginRight: "5px" }} />
+                Xóa
+              </Button>
+            </Popconfirm>
+            <Button
+              onClick={() => {
+                const id = record._id;
+                console.log("id", id);
+                axiosClient
+                  .patch("/categories/" + id, { is_delete: false })
+                  .then((response) => {
+                    setRefresh((f) => f + 1);
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    message.error("Thất bại !!!");
+                  });
+              }}
+              className=""
+            >
+              <FaTrashRestore size={"16px"} style={{ marginRight: "5px" }} />
+              Restore
+            </Button>
+          </div>
+        );
+      },
+    },
+    {},
   ];
   // addedAttribute(columnCategories, columns);
   // Handle Form
@@ -409,14 +508,30 @@ export default function Categories() {
   return (
     <div>
       <h1>Category List</h1>
-      <Button
-        className={`${style.custom_button}`}
-        onClick={() => {
-          setCreateFormVisible(true);
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "10px 0",
         }}
       >
-        Thêm danh mục
-      </Button>
+        <Button
+          className={`${style.custom_button}`}
+          onClick={() => {
+            setCreateFormVisible(true);
+          }}
+        >
+          Thêm danh mục
+        </Button>
+        <Button
+          danger
+          onClick={() => {
+            setEditFormDelete(true);
+          }}
+        >
+          Các danh mục đã xóa
+        </Button>
+      </div>
       {/* Cteate Form */}
       <Modal
         centered
@@ -462,6 +577,14 @@ export default function Categories() {
         />
       </Modal>
       <Table rowKey={"_id"} dataSource={categories} columns={columns} />
+      <Modal
+        open={editFormDelete}
+        onCancel={() => {
+          setEditFormDelete(false);
+        }}
+      >
+        <Table rowKey={"_id"} dataSource={isDelete} columns={isDeleteColoumn} />
+      </Modal>
     </div>
   );
 }
