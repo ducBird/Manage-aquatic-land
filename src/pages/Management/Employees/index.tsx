@@ -332,7 +332,7 @@ export default function Employees() {
               {/* Button Delete */}
               <Popconfirm
                 icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                title="Bạn có chắc muốn xóa vĩnh viễn nhân viên này không?"
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient

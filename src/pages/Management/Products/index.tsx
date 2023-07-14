@@ -453,7 +453,7 @@ export default function Products() {
               {/* Button Delete */}
               <Popconfirm
                 icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                title="Bạn có chắc muốn xóa vĩnh viễn sản phẩm này không?"
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
@@ -892,7 +892,7 @@ export default function Products() {
             setEditFormDelete(true);
           }}
         >
-          Các danh mục đã xóa
+          Các sản phẩm đã xóa
         </Button>
       </div>
       {/* --- CREATE PRODUCT FORM --- */}

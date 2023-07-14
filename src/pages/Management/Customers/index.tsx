@@ -462,7 +462,7 @@ export default function Customers() {
           <div className="flex">
             <Popconfirm
               icon={<AiFillQuestionCircle size={"24px"} className="" />}
-              title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+              title="Bạn có chắc muốn xóa vĩnh viễn khách hàng này không?"
               onConfirm={() => {
                 const id = record._id;
                 axiosClient
@@ -631,7 +631,7 @@ export default function Customers() {
       {/* Update Form */}
       <Modal
         centered
-        title="Chỉnh sửa danh mục"
+        title="Chỉnh sửa khách hàng"
         open={editFormVisible}
         onOk={() => {
           updateForm.submit();

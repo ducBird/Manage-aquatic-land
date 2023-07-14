@@ -345,7 +345,7 @@ export default function SubCategories() {
               {/* Button Delete */}
               <Popconfirm
                 icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                title="Bạn có chắc muốn xóa vĩnh viễn danh mục con này không?"
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
@@ -557,7 +557,7 @@ export default function SubCategories() {
             setCreateFormVisible(true);
           }}
         >
-          Thêm danh mục
+          Thêm danh mục con
         </Button>
         <Button
           danger
@@ -565,7 +565,7 @@ export default function SubCategories() {
             setEditFormDelete(true);
           }}
         >
-          Các danh mục đã xóa
+          Các danh mục con đã xóa
         </Button>
       </div>
       <Modal

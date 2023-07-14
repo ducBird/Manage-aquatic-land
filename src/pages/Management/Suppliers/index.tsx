@@ -329,7 +329,7 @@ export default function Suppliers() {
               {/* Button Delete */}
               <Popconfirm
                 icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                title="Bạn có chắc muốn xóa vĩnh viễn nhà cung cấp này không?"
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
@@ -566,7 +566,7 @@ export default function Suppliers() {
             setCreateFormVisible(true);
           }}
         >
-          Thêm danh mục
+          Thêm nhà cung cấp
         </Button>
         <Button
           danger
@@ -574,7 +574,7 @@ export default function Suppliers() {
             setEditFormDelete(true);
           }}
         >
-          Các danh mục đã xóa
+          Các nhà cung cấp đã xóa
         </Button>
       </div>
       <Modal

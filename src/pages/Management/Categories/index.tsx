@@ -77,7 +77,9 @@ export default function Categories() {
 
   useEffect(() => {
     axiosClient
-      .get("/categories")
+      .get("/categories", {
+        headers: { access_token: `Bearer ${users.access_token}` },
+      })
       .then((response) => {
         const filterIsDeleteCategories = response.data.filter(
           (category: ICategory) => {
@@ -266,7 +268,15 @@ export default function Categories() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/categories/" + id, { is_delete: true })
+                    .patch(
+                      "/categories/" + id,
+                      { is_delete: true },
+                      {
+                        headers: {
+                          access_token: `Bearer ${users.access_token}`,
+                        },
+                      }
+                    )
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -349,7 +359,13 @@ export default function Categories() {
                 const id = record._id;
                 console.log("id", id);
                 axiosClient
-                  .patch("/categories/" + id, { is_delete: false })
+                  .patch(
+                    "/categories/" + id,
+                    { is_delete: false },
+                    {
+                      headers: { access_token: `Bearer ${users.access_token}` },
+                    }
+                  )
                   .then((response) => {
                     setRefresh((f) => f + 1);
                   })
@@ -504,7 +520,8 @@ export default function Categories() {
   const onUpdateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   return (
     <div>
       <h1>Category List</h1>
@@ -524,6 +541,7 @@ export default function Categories() {
           Thêm danh mục
         </Button>
         <Button
+          disabled={user.state.users.user.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);
