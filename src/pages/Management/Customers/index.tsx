@@ -51,7 +51,9 @@ export default function Customers() {
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   //
-  const { users } = useUser((state) => state);
+  const { users } = useUser((state) => state) as any;
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   useEffect(() => {
     axiosClient
       .get("/customers", {
@@ -72,7 +74,11 @@ export default function Customers() {
   }, [refresh]);
   useEffect(() => {
     axiosClient
-      .get("/customers")
+      .get("/customers", {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         const filterDeleteCustomers = response.data.filter(
           (customers: ICustomer) => {
@@ -284,18 +290,28 @@ export default function Customers() {
                   const publicId = record.id;
                   console.log("publicId", publicId);
                   try {
-                    await axiosClient.patch(`/customers/${id}`, {
-                      is_delete: true,
-                    });
-                    await axios.delete(
-                      `${API_URL}/upload/delete-image/${publicId}`
+                    await axiosClient.patch(
+                      `/customers/${id}`,
+                      {
+                        is_delete: true,
+                      },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
                     );
-                    console.log("Xóa ảnh thành công");
+                    // await axios.delete(
+                    //   `${API_URL}/upload/delete-image/${publicId}`
+                    // );
+                    // console.log("Xóa ảnh thành công");
                     message.success("Xóa thành công!");
                     setRefresh((f) => f + 1);
-                  } catch (error) {
-                    console.log("Đã xảy ra lỗi khi xóa ảnh hoặc dữ liệu");
+                  } catch (error: any) {
                     message.error("Xóa thất bại!");
+                    message.error(error.response.data);
                   }
                 }}
                 okText="Có"
@@ -466,7 +482,13 @@ export default function Customers() {
               onConfirm={() => {
                 const id = record._id;
                 axiosClient
-                  .delete("/customers/" + id)
+                  .delete("/customers/" + id, {
+                    headers: {
+                      access_token: `Bearer ${window.localStorage.getItem(
+                        "access_token"
+                      )}`,
+                    },
+                  })
                   //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
                   .then((response) => {
                     message.success("Đã xóa thành công");
@@ -474,7 +496,7 @@ export default function Customers() {
                   })
                   .catch((err) => {
                     console.log(err);
-                    message.error("Thất bại !!!");
+                    message.error(err.response.data);
                   });
               }}
               okText="Có"
@@ -491,13 +513,23 @@ export default function Customers() {
                 const id = record._id;
                 console.log("id", id);
                 axiosClient
-                  .patch("/customers/" + id, { is_delete: false })
+                  .patch(
+                    "/customers/" + id,
+                    { is_delete: false },
+                    {
+                      headers: {
+                        access_token: `Bearer ${window.localStorage.getItem(
+                          "access_token"
+                        )}`,
+                      },
+                    }
+                  )
                   .then((response) => {
                     setRefresh((f) => f + 1);
                   })
                   .catch((err) => {
                     console.log(err);
-                    message.error("Thất bại !!!");
+                    message.error(err.response.data);
                   });
               }}
               className=""
@@ -513,7 +545,11 @@ export default function Customers() {
   ];
   const onFinish = (values: any) => {
     axiosClient
-      .post("/customers", values)
+      .post("/customers", values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -538,6 +574,7 @@ export default function Customers() {
       .catch((err) => {
         message.error("Thêm mới thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
     console.log("👌👌👌", values);
@@ -547,7 +584,11 @@ export default function Customers() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/customers/" + selectedRecord._id, values)
+      .patch("/customers/" + selectedRecord._id, values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -572,7 +613,7 @@ export default function Customers() {
       })
       .catch((err) => {
         message.error("Cập nhật thất bại!");
-        message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };
@@ -598,6 +639,7 @@ export default function Customers() {
           Thêm khách hàng
         </Button>
         <Button
+          disabled={user?.state?.users?.user?.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);

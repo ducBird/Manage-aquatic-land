@@ -32,7 +32,7 @@ export const useUser = create(
         const refresh_token = localStorage.getItem("refresh_token");
         if (refresh_token) {
           try {
-            const response = await axiosClient.post("customers/refresh-token", {
+            const response = await axiosClient.post("employees/refresh-token", {
               refresh_token,
             });
             const { access_token } = response.data;

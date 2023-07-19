@@ -31,6 +31,7 @@ import type { ColumnType, ColumnsType } from "antd/es/table";
 import { IEmployees } from "../../../interfaces/Employees";
 import { FilterConfirmProps } from "antd/es/table/interface";
 import { FaTrashRestore } from "react-icons/fa";
+import { useUser } from "../../../hooks/useUser";
 export default function Employees() {
   const [employees, setEmployees] = useState<IEmployees[]>([]);
   const [isEmployees, setIsEmployees] = useState<IEmployees[]>([]);
@@ -49,9 +50,17 @@ export default function Employees() {
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+  //
+  const { users } = useUser((state) => state) as any;
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   useEffect(() => {
     axiosClient
-      .get("/employees")
+      .get("/employees", {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         const filteredEmployees = response.data.filter(
           (employees: IEmployees) => {
@@ -62,11 +71,16 @@ export default function Employees() {
       })
       .catch((err) => {
         console.log(err);
+        message.error(err.response.data);
       });
   }, [refresh]);
   useEffect(() => {
     axiosClient
-      .get("/employees")
+      .get("/employees", {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         const filterIsDeleteEmployees = response.data.filter(
           (employees: IEmployees) => {
@@ -77,6 +91,7 @@ export default function Employees() {
       })
       .catch((err) => {
         console.log(err);
+        message.error(err.response.data);
       });
   }, [refresh]);
   //Search
@@ -274,7 +289,17 @@ export default function Employees() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/employees/" + id, { is_delete: true })
+                    .patch(
+                      "/employees/" + id,
+                      { is_delete: true },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
+                    )
                     .then(() => {
                       // Gửi yêu cầu xóa ảnh từ Cloudinary
                       message.success("Xóa thành công!");
@@ -283,6 +308,8 @@ export default function Employees() {
                     .catch((err) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
+                      message.error(err.response.data);
+                      message.error(err.response.data.msg);
                     });
                 }}
                 okText="Có"
@@ -336,7 +363,13 @@ export default function Employees() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .delete("/employees/" + id)
+                    .delete("/employees/" + id, {
+                      headers: {
+                        access_token: `Bearer ${window.localStorage.getItem(
+                          "access_token"
+                        )}`,
+                      },
+                    })
                     .then(() => {
                       // Gửi yêu cầu xóa ảnh từ Cloudinary
                       message.success("Xóa thành công!");
@@ -345,6 +378,8 @@ export default function Employees() {
                     .catch((err) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
+                      message.error(err.response.data);
+                      message.error(err.response.data.msg);
                     });
                 }}
                 okText="Có"
@@ -357,7 +392,17 @@ export default function Employees() {
                   const id = record._id;
                   console.log("id", id);
                   axiosClient
-                    .patch("/employees/" + id, { is_delete: false })
+                    .patch(
+                      "/employees/" + id,
+                      { is_delete: false },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
+                    )
                     .then((response) => {
                       setRefresh((f) => f + 1);
                     })
@@ -502,7 +547,11 @@ export default function Employees() {
   ];
   const onFinish = (values: any) => {
     axiosClient
-      .post("/employees", values)
+      .post("/employees", values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -527,6 +576,7 @@ export default function Employees() {
       .catch((err) => {
         message.error("Thêm mới thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
     console.log("👌👌👌", values);
@@ -536,7 +586,11 @@ export default function Employees() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/employees/" + selectedRecord._id, values)
+      .patch("/employees/" + selectedRecord._id, values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -562,6 +616,7 @@ export default function Employees() {
       .catch((err) => {
         message.error("Cập nhật thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };
@@ -587,6 +642,7 @@ export default function Employees() {
           Thêm nhân viên
         </Button>
         <Button
+          disabled={user?.state?.users?.user?.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);

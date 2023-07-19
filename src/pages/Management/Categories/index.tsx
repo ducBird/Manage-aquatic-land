@@ -55,12 +55,12 @@ export default function Categories() {
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   //
-  const { users } = useUser((state) => state);
+  const { users } = useUser((state) => state) as any;
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   useEffect(() => {
     axiosClient
-      .get("/categories", {
-        headers: { access_token: `Bearer ${users.access_token}` },
-      })
+      .get("/categories")
       .then((response) => {
         const filteredCategories = response.data.filter(
           (category: ICategory) => {
@@ -77,9 +77,7 @@ export default function Categories() {
 
   useEffect(() => {
     axiosClient
-      .get("/categories", {
-        headers: { access_token: `Bearer ${users.access_token}` },
-      })
+      .get("/categories")
       .then((response) => {
         const filterIsDeleteCategories = response.data.filter(
           (category: ICategory) => {
@@ -273,7 +271,9 @@ export default function Categories() {
                       { is_delete: true },
                       {
                         headers: {
-                          access_token: `Bearer ${users.access_token}`,
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
                         },
                       }
                     )
@@ -333,7 +333,11 @@ export default function Categories() {
                 const id = record._id;
                 axiosClient
                   .delete("/categories/" + id, {
-                    headers: { access_token: `Bearer ${users.access_token}` },
+                    headers: {
+                      access_token: `Bearer ${window.localStorage.getItem(
+                        "access_token"
+                      )}`,
+                    },
                   })
                   //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
                   .then((response) => {
@@ -363,7 +367,11 @@ export default function Categories() {
                     "/categories/" + id,
                     { is_delete: false },
                     {
-                      headers: { access_token: `Bearer ${users.access_token}` },
+                      headers: {
+                        access_token: `Bearer ${window.localStorage.getItem(
+                          "access_token"
+                        )}`,
+                      },
                     }
                   )
                   .then((response) => {
@@ -449,7 +457,9 @@ export default function Categories() {
   const onFinish = (values: any) => {
     axiosClient
       .post("/categories", values, {
-        headers: { access_token: `Bearer ${users.access_token}` },
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
       })
       .then((response) => {
         if (values.file !== undefined) {
@@ -486,7 +496,9 @@ export default function Categories() {
   const onUpdateFinish = (values: any) => {
     axiosClient
       .patch("/categories/" + selectedRecord._id, values, {
-        headers: { access_token: `Bearer ${users.access_token}` },
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
       })
       .then((response) => {
         if (values.file !== undefined) {
@@ -520,8 +532,6 @@ export default function Categories() {
   const onUpdateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-  const userString = localStorage.getItem("user-storage");
-  const user = userString ? JSON.parse(userString) : null;
   return (
     <div>
       <h1>Category List</h1>
@@ -541,7 +551,7 @@ export default function Categories() {
           Thêm danh mục
         </Button>
         <Button
-          disabled={user.state.users.user.roles ? false : true}
+          disabled={user?.state?.users?.user?.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);

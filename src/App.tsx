@@ -17,20 +17,23 @@ import { useUser } from "./hooks/useUser";
 const { Header, Content, Sider } = Layout;
 
 function App() {
-  const { initialize, refreshToken } = useUser();
+  const { users, initialize, refreshToken } = useUser((state) => state) as any;
 
   useEffect(() => {
-    initialize();
+    if (Object.keys(users).length !== 0) {
+      // console.log("initialized");
+      initialize();
+      // Thiết lập interval để tự động làm mới token mỗi 10 phút
+      const refreshInterval = setInterval(() => {
+        // console.log("run refresh-token api");
+        refreshToken();
+      }, 10 * 60 * 1000);
 
-    // Thiết lập interval để tự động làm mới token mỗi 10 phút
-    const refreshInterval = setInterval(() => {
-      refreshToken();
-    }, 10 * 60 * 1000);
-
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, []);
+      return () => {
+        clearInterval(refreshInterval);
+      };
+    }
+  }, [Object.keys(users).length]);
   return (
     <main>
       <BrowserRouter>
