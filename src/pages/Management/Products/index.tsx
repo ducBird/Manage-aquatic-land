@@ -907,7 +907,7 @@ export default function Products() {
     console.log(values);
     axios
       .put(
-        "http://localhost:9000/variants-p/updateVariants",
+        "https://be-aquatic-land.onrender.com/variants-p/updateVariants",
         {
           values,
           product_id: selectedRecord._id,
