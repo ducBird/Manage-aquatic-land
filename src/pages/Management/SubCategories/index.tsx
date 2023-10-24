@@ -557,7 +557,7 @@ export default function SubCategories() {
             setCreateFormVisible(true);
           }}
         >
-          Thêm danh mục
+          Thêm danh mục con
         </Button>
         <Button
           danger
@@ -565,7 +565,7 @@ export default function SubCategories() {
             setEditFormDelete(true);
           }}
         >
-          Các danh mục đã xóa
+          Các danh mục con đã xóa
         </Button>
       </div>
       <Modal

@@ -9,6 +9,7 @@ import SubCategories from "./pages/Management/SubCategories";
 import Suppliers from "./pages/Management/Suppliers";
 import Customers from "./pages/Management/Customers";
 import Employees from "./pages/Management/Employees";
+import Accumulated from "./pages/Management/Accumulated";
 
 const { Header, Content, Sider } = Layout;
 
@@ -48,6 +49,10 @@ function App() {
                   <Route path="/management/suppliers" element={<Suppliers />} />
                   <Route path="/management/customers" element={<Customers />} />
                   <Route path="/management/employees" element={<Employees />} />
+                  <Route
+                    path="/management/accumulated"
+                    element={<Accumulated />}
+                  />
                 </Routes>
               </Content>
             </Layout>

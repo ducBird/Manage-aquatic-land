@@ -33,7 +33,7 @@ export default function SiderMenu() {
           icon: <MdOutlineCategory />,
         },
         {
-          label: "Danh mục phụ",
+          label: "Danh mục con",
           key: "management-subCategories",
           icon: <AiOutlineDiff />,
         },
@@ -56,6 +56,11 @@ export default function SiderMenu() {
         {
           label: "Nhà cung cấp",
           key: "management-suppliers",
+          icon: <RiLuggageDepositLine />,
+        },
+        {
+          label: "Tích lũy tiền",
+          key: "management-accumulated",
           icon: <RiLuggageDepositLine />,
         },
       ],
