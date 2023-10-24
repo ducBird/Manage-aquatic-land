@@ -13,6 +13,10 @@ import Employees from "./pages/Management/Employees";
 import HomePage from "./pages/Home";
 import Login from "./pages/Login";
 import { useUser } from "./hooks/useUser";
+import Orders from "./pages/Sales/Orders";
+import numeral from "numeral";
+import "numeral/locales/vi";
+numeral.locale("vi");
 
 const { Header, Content, Sider } = Layout;
 
@@ -86,6 +90,7 @@ function App() {
                   <Route path="/management/suppliers" element={<Suppliers />} />
                   <Route path="/management/customers" element={<Customers />} />
                   <Route path="/management/employees" element={<Employees />} />
+                  <Route path="/sales/orders" element={<Orders />} />
                 </Routes>
               </Content>
             </Layout>

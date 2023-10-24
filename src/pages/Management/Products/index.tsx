@@ -907,7 +907,8 @@ export default function Products() {
     console.log(values);
     axios
       .put(
-        "https://be-aquatic-land.onrender.com/variants-p/updateVariants",
+        // "https://be-aquatic-land.onrender.com/variants-p/updateVariants",
+        "http://localhost:9000/variants-p/updateVariants",
         {
           values,
           product_id: selectedRecord._id,
@@ -1043,7 +1044,7 @@ export default function Products() {
             {(fields, { add, remove }) => (
               <>
                 {fields.map((field, index) => (
-                  <div key={field.key} className={style.variant_container}>
+                  <div key={field.key}>
                     <h4 style={{ marginTop: 0 }}>Biến thể {index + 1}</h4>
                     <Form.Item
                       label={`Tên biến thể`}
