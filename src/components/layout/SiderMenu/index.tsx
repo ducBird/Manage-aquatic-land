@@ -53,16 +53,17 @@ export default function SiderMenu() {
           icon: <MdOutlineSupportAgent />,
         },
         { label: "Đơn hàng", key: "sales-orders", icon: <MdOutlineArticle /> },
-        {
-          label: "Nhà cung cấp",
-          key: "management-suppliers",
-          icon: <RiLuggageDepositLine />,
-        },
+
         {
           label: "Tích lũy tiền",
           key: "management-accumulated",
           icon: <RiLuggageDepositLine />,
         },
+        // {
+        //   label: "Nhà cung cấp",
+        //   key: "management-suppliers",
+        //   icon: <RiLuggageDepositLine />,
+        // },
       ],
     },
     {
@@ -111,17 +112,17 @@ export default function SiderMenu() {
         },
       ],
     },
-    {
-      label: "Quản lý khoa",
-      key: "warehouse",
-      icon: <FaWarehouse />,
-      children: [
-        {
-          label: "Đơn hàng đang đợi vận chuyển",
-          key: "warehouse-shipping",
-        },
-      ],
-    },
+    // {
+    //   label: "Quản lý kho",
+    //   key: "warehouse",
+    //   icon: <FaWarehouse />,
+    //   children: [
+    //     {
+    //       label: "Đơn hàng đang đợi vận chuyển",
+    //       key: "warehouse-shipping",
+    //     },
+    //   ],
+    // },
     { label: "Cài Đặt", key: "settings", icon: <AiOutlineSetting /> }, // which is required
   ];
   const itemsSiderShipper = [
@@ -144,7 +145,7 @@ export default function SiderMenu() {
   ];
   const itemsSiderWarehouse = [
     {
-      label: "Quản lý khoa",
+      label: "Quản lý kho",
       key: "warehouse",
       icon: <FaWarehouse />,
       children: [

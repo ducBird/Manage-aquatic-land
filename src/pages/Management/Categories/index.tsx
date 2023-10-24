@@ -32,6 +32,7 @@ import Highlighter from "react-highlight-words";
 import { API_URL } from "../../../constants/URLS";
 // import Highlighter from "react-highlight-words";
 import { FilterConfirmProps } from "antd/es/table/interface";
+import { useUser } from "../../../hooks/useUser";
 import { AiFillDelete, AiFillQuestionCircle } from "react-icons/ai";
 import { FaTrashRestore } from "react-icons/fa";
 // import Highlighter from "react-highlight-words";
@@ -53,6 +54,10 @@ export default function Categories() {
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+  //
+  const { users } = useUser((state) => state) as any;
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   useEffect(() => {
     axiosClient
       .get("/categories")
@@ -65,6 +70,7 @@ export default function Categories() {
         setCategories(filteredCategories);
       })
       .catch((err) => {
+        message.error(err.response.data);
         console.log(err);
       });
   }, [refresh]);
@@ -260,7 +266,17 @@ export default function Categories() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/categories/" + id, { is_delete: true })
+                    .patch(
+                      "/categories/" + id,
+                      { is_delete: true },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
+                    )
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -268,6 +284,7 @@ export default function Categories() {
                     .catch((err: any) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
+                      message.error(err.response.data);
                     });
                 }}
                 okText="Có"
@@ -315,7 +332,13 @@ export default function Categories() {
               onConfirm={() => {
                 const id = record._id;
                 axiosClient
-                  .delete("/categories/" + id)
+                  .delete("/categories/" + id, {
+                    headers: {
+                      access_token: `Bearer ${window.localStorage.getItem(
+                        "access_token"
+                      )}`,
+                    },
+                  })
                   //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
                   .then((response) => {
                     message.success("Đã xóa thành công");
@@ -340,7 +363,17 @@ export default function Categories() {
                 const id = record._id;
                 console.log("id", id);
                 axiosClient
-                  .patch("/categories/" + id, { is_delete: false })
+                  .patch(
+                    "/categories/" + id,
+                    { is_delete: false },
+                    {
+                      headers: {
+                        access_token: `Bearer ${window.localStorage.getItem(
+                          "access_token"
+                        )}`,
+                      },
+                    }
+                  )
                   .then((response) => {
                     setRefresh((f) => f + 1);
                   })
@@ -423,7 +456,11 @@ export default function Categories() {
 
   const onFinish = (values: any) => {
     axiosClient
-      .post("/categories", values)
+      .post("/categories", values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -438,6 +475,7 @@ export default function Categories() {
             })
             .catch((err) => {
               message.error("Tải lên hình ảnh thất bại!");
+              message.error(err.response.data);
               console.log(err);
             });
         }
@@ -447,7 +485,7 @@ export default function Categories() {
       })
       .catch((err) => {
         message.error("Thêm mới thất bại!");
-        message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
     console.log("👌👌👌", values);
@@ -457,7 +495,11 @@ export default function Categories() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/categories/" + selectedRecord._id, values)
+      .patch("/categories/" + selectedRecord._id, values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -482,14 +524,14 @@ export default function Categories() {
       })
       .catch((err) => {
         message.error("Cập nhật thất bại!");
-        message.error(err.response.data.msg);
+        // message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };
   const onUpdateFinishFailed = (errors: object) => {
     console.log("💣💣💣 ", errors);
   };
-
   return (
     <div>
       <h1>Category List</h1>
@@ -509,6 +551,7 @@ export default function Categories() {
           Thêm danh mục
         </Button>
         <Button
+          disabled={user?.state?.users?.user?.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);

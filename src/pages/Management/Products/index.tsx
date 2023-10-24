@@ -39,6 +39,7 @@ import { FilterConfirmProps } from "antd/es/table/interface";
 import axios from "axios";
 import { API_URL } from "../../../constants/URLS";
 import { FaTrashRestore } from "react-icons/fa";
+import { useUser } from "../../../hooks/useUser";
 export default function Products() {
   //--- state để render dữ liệu ở columns, productField và xử lý <Select/> trong Form antd ---//
   const [products, setProducts] = useState<IProduct[]>([]);
@@ -68,6 +69,9 @@ export default function Products() {
   const [refresh, setRefresh] = useState(0);
   //----------------------------------------------------------------//
   const [variants, setVariants] = useState<IVariant[]>([]);
+  const { users } = useUser((state) => state) as any;
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   //State search
   type DataIndex = keyof IProduct;
   const [searchText, setSearchText] = useState("");
@@ -398,7 +402,17 @@ export default function Products() {
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .patch("/products/" + id, { is_delete: true })
+                    .patch(
+                      "/products/" + id,
+                      { is_delete: true },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
+                    )
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -406,6 +420,8 @@ export default function Products() {
                     .catch((err) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
+                      message.error(err.response.data.msg);
+                      message.error(err.response.data);
                     });
                 }}
                 okText="Có"
@@ -453,11 +469,17 @@ export default function Products() {
               {/* Button Delete */}
               <Popconfirm
                 icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                title="Bạn có chắc muốn xóa vĩnh viễn sản phẩm này không?"
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
-                    .delete("/products/" + id)
+                    .delete("/products/" + id, {
+                      headers: {
+                        access_token: `Bearer ${window.localStorage.getItem(
+                          "access_token"
+                        )}`,
+                      },
+                    })
                     .then(() => {
                       message.success("Xóa thành công!");
                       setRefresh((f) => f + 1);
@@ -465,6 +487,7 @@ export default function Products() {
                     .catch((err) => {
                       console.log(err);
                       message.error("Xóa thất bại!");
+                      message.error(err.response.data);
                     });
                 }}
                 okText="Có"
@@ -477,13 +500,25 @@ export default function Products() {
                   const id = record._id;
                   console.log("id", id);
                   axiosClient
-                    .patch("/products/" + id, { is_delete: false })
+                    .patch(
+                      "/products/" + id,
+                      { is_delete: false },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
+                    )
                     .then((response) => {
                       setRefresh((f) => f + 1);
                     })
                     .catch((err) => {
                       console.log(err);
                       message.error("Thất bại !!!");
+                      message.error(err.response.data.msg);
+                      message.error(err.response.data);
                     });
                 }}
                 className=""
@@ -738,7 +773,11 @@ export default function Products() {
   // };
   const onCreateFinish = (values: any) => {
     axiosClient
-      .post("/products", values)
+      .post("/products", values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -763,6 +802,7 @@ export default function Products() {
       .catch((err) => {
         message.error("Thêm mới thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
     console.log("👌👌👌", values);
@@ -773,7 +813,11 @@ export default function Products() {
 
   const onUpdateFinish = (values: IProduct) => {
     axiosClient
-      .patch("/products/" + selectedRecord._id, values)
+      .patch("/products/" + selectedRecord._id, values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then(() => {
         message.success("Cập nhật thành công!");
         setRefresh((f) => f + 1);
@@ -782,6 +826,7 @@ export default function Products() {
       .catch((err) => {
         message.error("Cập nhật thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };
@@ -803,7 +848,13 @@ export default function Products() {
     values.variants.map((v: any, index: number) => {
       const valueVariants = { ...v, product_id: selectedRecord._id };
       axiosClient
-        .post("/variants-p/", valueVariants)
+        .post("/variants-p/", valueVariants, {
+          headers: {
+            access_token: `Bearer ${window.localStorage.getItem(
+              "access_token"
+            )}`,
+          },
+        })
         .then((res) => {
           const variantId = res.data.id;
           console.log(res.data);
@@ -827,9 +878,19 @@ export default function Products() {
                 console.log(err);
               });
           }
-          axiosClient.patch("/products/" + selectedRecord._id, {
-            variants: updateVariants,
-          });
+          axiosClient.patch(
+            "/products/" + selectedRecord._id,
+            {
+              variants: updateVariants,
+            },
+            {
+              headers: {
+                access_token: `Bearer ${window.localStorage.getItem(
+                  "access_token"
+                )}`,
+              },
+            }
+          );
           setRefresh((f) => f + 1);
           // setOpenModalVariant(false);
           message.success(`Biến thể ${index + 1} đã được cập nhật!`);
@@ -837,6 +898,7 @@ export default function Products() {
         .catch((err) => {
           message.error("Cập nhật biến thể thất bại!");
           message.error(err.response.data.msg);
+          message.error(err.response.data);
           console.log(err);
         });
     });
@@ -844,10 +906,21 @@ export default function Products() {
   const updateVariants = (values: any) => {
     console.log(values);
     axios
-      .put("http://localhost:9000/variants-p/updateVariants", {
-        values,
-        product_id: selectedRecord._id,
-      })
+      .put(
+        // "https://be-aquatic-land.onrender.com/variants-p/updateVariants",
+        "http://localhost:9000/variants-p/updateVariants",
+        {
+          values,
+          product_id: selectedRecord._id,
+        },
+        {
+          headers: {
+            access_token: `Bearer ${window.localStorage.getItem(
+              "access_token"
+            )}`,
+          },
+        }
+      )
       .then((res) => {
         const variantArray = res.data.map((variant: any) => {
           return variant.options;
@@ -861,6 +934,7 @@ export default function Products() {
       .catch((err) => {
         message.error("Cập nhật thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };
@@ -887,12 +961,13 @@ export default function Products() {
           Thêm sản phẩm
         </Button>
         <Button
+          disabled={user?.state?.users?.user?.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);
           }}
         >
-          Các danh mục đã xóa
+          Các sản phẩm đã xóa
         </Button>
       </div>
       {/* --- CREATE PRODUCT FORM --- */}
@@ -969,7 +1044,7 @@ export default function Products() {
             {(fields, { add, remove }) => (
               <>
                 {fields.map((field, index) => (
-                  <div key={field.key} className={style.variant_container}>
+                  <div key={field.key}>
                     <h4 style={{ marginTop: 0 }}>Biến thể {index + 1}</h4>
                     <Form.Item
                       label={`Tên biến thể`}

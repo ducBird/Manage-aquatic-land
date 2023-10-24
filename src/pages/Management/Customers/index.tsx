@@ -29,6 +29,7 @@ import moment from "moment";
 import Highlighter from "react-highlight-words";
 import type { ColumnType, ColumnsType } from "antd/es/table";
 import { FilterConfirmProps } from "antd/es/table/interface";
+import { useUser } from "../../../hooks/useUser";
 import { AiFillDelete, AiFillQuestionCircle } from "react-icons/ai";
 import { FaTrashRestore } from "react-icons/fa";
 export default function Customers() {
@@ -49,9 +50,15 @@ export default function Customers() {
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+  //
+  const { users } = useUser((state) => state) as any;
+  const userString = localStorage.getItem("user-storage");
+  const user = userString ? JSON.parse(userString) : null;
   useEffect(() => {
     axiosClient
-      .get("/customers")
+      .get("/customers", {
+        headers: { access_token: `Bearer ${users.access_token}` },
+      })
       .then((response) => {
         const filteredCustomers = response.data.filter(
           (customers: ICustomer) => {
@@ -61,12 +68,17 @@ export default function Customers() {
         setCustomers(filteredCustomers);
       })
       .catch((err) => {
+        message.error(err.response.data);
         console.log(err);
       });
   }, [refresh]);
   useEffect(() => {
     axiosClient
-      .get("/customers")
+      .get("/customers", {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         const filterDeleteCustomers = response.data.filter(
           (customers: ICustomer) => {
@@ -278,18 +290,28 @@ export default function Customers() {
                   const publicId = record.id;
                   console.log("publicId", publicId);
                   try {
-                    await axiosClient.patch(`/customers/${id}`, {
-                      is_delete: true,
-                    });
-                    await axios.delete(
-                      `${API_URL}/upload/delete-image/${publicId}`
+                    await axiosClient.patch(
+                      `/customers/${id}`,
+                      {
+                        is_delete: true,
+                      },
+                      {
+                        headers: {
+                          access_token: `Bearer ${window.localStorage.getItem(
+                            "access_token"
+                          )}`,
+                        },
+                      }
                     );
-                    console.log("Xóa ảnh thành công");
+                    // await axios.delete(
+                    //   `${API_URL}/upload/delete-image/${publicId}`
+                    // );
+                    // console.log("Xóa ảnh thành công");
                     message.success("Xóa thành công!");
                     setRefresh((f) => f + 1);
-                  } catch (error) {
-                    console.log("Đã xảy ra lỗi khi xóa ảnh hoặc dữ liệu");
+                  } catch (error: any) {
                     message.error("Xóa thất bại!");
+                    message.error(error.response.data);
                   }
                 }}
                 okText="Có"
@@ -456,11 +478,17 @@ export default function Customers() {
           <div className="flex">
             <Popconfirm
               icon={<AiFillQuestionCircle size={"24px"} className="" />}
-              title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+              title="Bạn có chắc muốn xóa vĩnh viễn khách hàng này không?"
               onConfirm={() => {
                 const id = record._id;
                 axiosClient
-                  .delete("/customers/" + id)
+                  .delete("/customers/" + id, {
+                    headers: {
+                      access_token: `Bearer ${window.localStorage.getItem(
+                        "access_token"
+                      )}`,
+                    },
+                  })
                   //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
                   .then((response) => {
                     message.success("Đã xóa thành công");
@@ -468,7 +496,7 @@ export default function Customers() {
                   })
                   .catch((err) => {
                     console.log(err);
-                    message.error("Thất bại !!!");
+                    message.error(err.response.data);
                   });
               }}
               okText="Có"
@@ -485,13 +513,23 @@ export default function Customers() {
                 const id = record._id;
                 console.log("id", id);
                 axiosClient
-                  .patch("/customers/" + id, { is_delete: false })
+                  .patch(
+                    "/customers/" + id,
+                    { is_delete: false },
+                    {
+                      headers: {
+                        access_token: `Bearer ${window.localStorage.getItem(
+                          "access_token"
+                        )}`,
+                      },
+                    }
+                  )
                   .then((response) => {
                     setRefresh((f) => f + 1);
                   })
                   .catch((err) => {
                     console.log(err);
-                    message.error("Thất bại !!!");
+                    message.error(err.response.data);
                   });
               }}
               className=""
@@ -507,7 +545,11 @@ export default function Customers() {
   ];
   const onFinish = (values: any) => {
     axiosClient
-      .post("/customers", values)
+      .post("/customers", values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -532,6 +574,7 @@ export default function Customers() {
       .catch((err) => {
         message.error("Thêm mới thất bại!");
         message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
     console.log("👌👌👌", values);
@@ -541,7 +584,11 @@ export default function Customers() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/customers/" + selectedRecord._id, values)
+      .patch("/customers/" + selectedRecord._id, values, {
+        headers: {
+          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        },
+      })
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -566,7 +613,7 @@ export default function Customers() {
       })
       .catch((err) => {
         message.error("Cập nhật thất bại!");
-        message.error(err.response.data.msg);
+        message.error(err.response.data);
         console.log(err);
       });
   };
@@ -589,15 +636,16 @@ export default function Customers() {
             setCreateFormVisible(true);
           }}
         >
-          Thêm danh mục
+          Thêm khách hàng
         </Button>
         <Button
+          disabled={user?.state?.users?.user?.roles ? false : true}
           danger
           onClick={() => {
             setEditFormDelete(true);
           }}
         >
-          Các danh mục đã xóa
+          Các khách hàng đã xóa
         </Button>
       </div>
       {/* Cteate Form */}
@@ -625,7 +673,7 @@ export default function Customers() {
       {/* Update Form */}
       <Modal
         centered
-        title="Chỉnh sửa danh mục"
+        title="Chỉnh sửa khách hàng"
         open={editFormVisible}
         onOk={() => {
           updateForm.submit();

@@ -345,7 +345,7 @@ export default function SubCategories() {
               {/* Button Delete */}
               <Popconfirm
                 icon={<QuestionCircleOutlined style={{ color: "red" }} />}
-                title="Bạn có chắc muốn xóa vĩnh viễn danh mục này không?"
+                title="Bạn có chắc muốn xóa vĩnh viễn danh mục con này không?"
                 onConfirm={() => {
                   const id = record._id;
                   axiosClient
