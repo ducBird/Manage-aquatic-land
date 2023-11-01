@@ -268,14 +268,14 @@ export default function Categories() {
                   axiosClient
                     .patch(
                       "/categories/" + id,
-                      { is_delete: true },
-                      {
-                        headers: {
-                          access_token: `Bearer ${window.localStorage.getItem(
-                            "access_token"
-                          )}`,
-                        },
-                      }
+                      { is_delete: true }
+                      // {
+                      //   headers: {
+                      //     access_token: `Bearer ${window.localStorage.getItem(
+                      //       "access_token"
+                      //     )}`,
+                      //   },
+                      // }
                     )
                     .then(() => {
                       message.success("Xóa thành công!");
@@ -332,13 +332,16 @@ export default function Categories() {
               onConfirm={() => {
                 const id = record._id;
                 axiosClient
-                  .delete("/categories/" + id, {
-                    headers: {
-                      access_token: `Bearer ${window.localStorage.getItem(
-                        "access_token"
-                      )}`,
-                    },
-                  })
+                  .delete(
+                    "/categories/" + id
+                    // {
+                    //   headers: {
+                    //     access_token: `Bearer ${window.localStorage.getItem(
+                    //       "access_token"
+                    //     )}`,
+                    //   },
+                    // }
+                  )
                   //{isDelete:true là mình sẽ lấy giá trị isDelete và xét nó về giá trị true}
                   .then((response) => {
                     message.success("Đã xóa thành công");
@@ -365,14 +368,14 @@ export default function Categories() {
                 axiosClient
                   .patch(
                     "/categories/" + id,
-                    { is_delete: false },
-                    {
-                      headers: {
-                        access_token: `Bearer ${window.localStorage.getItem(
-                          "access_token"
-                        )}`,
-                      },
-                    }
+                    { is_delete: false }
+                    // {
+                    //   headers: {
+                    //     access_token: `Bearer ${window.localStorage.getItem(
+                    //       "access_token"
+                    //     )}`,
+                    //   },
+                    // }
                   )
                   .then((response) => {
                     setRefresh((f) => f + 1);
@@ -456,11 +459,15 @@ export default function Categories() {
 
   const onFinish = (values: any) => {
     axiosClient
-      .post("/categories", values, {
-        headers: {
-          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
-        },
-      })
+      .post(
+        "/categories",
+        values
+        // {
+        //   headers: {
+        //     access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        //   },
+        // }
+      )
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
@@ -495,11 +502,15 @@ export default function Categories() {
   };
   const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/categories/" + selectedRecord._id, values, {
-        headers: {
-          access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
-        },
-      })
+      .patch(
+        "/categories/" + selectedRecord._id,
+        values
+        // {
+        //   headers: {
+        //     access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+        //   },
+        // }
+      )
       .then((response) => {
         if (values.file !== undefined) {
           //UPLOAD FILE
