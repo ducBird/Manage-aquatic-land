@@ -17,6 +17,9 @@ import { useUser } from "./hooks/useUser";
 import Orders from "./pages/Sales/Orders";
 import numeral from "numeral";
 import "numeral/locales/vi";
+import OrdersByStatus from "./pages/Sales/Orders/OrdersByStatus";
+import OrdersByPaymentInformation from "./pages/Sales/Orders/OrdersByPaymentInformation";
+import OrdersByPaymentStatus from "./pages/Sales/Orders/OrdersByPaymentStatus";
 numeral.locale("vi");
 
 const { Header, Content, Sider } = Layout;
@@ -96,6 +99,21 @@ function App() {
                     element={<Accumulated />}
                   />
                   <Route path="/sales/orders" element={<Orders />} />
+
+                  {/* thống kê */}
+                  <Route
+                    path="/sales/orders/by/status"
+                    element={<OrdersByStatus />}
+                  />
+                  <Route
+                    path="/sales/orders/by/payment_information"
+                    element={<OrdersByPaymentInformation />}
+                  />
+                  <Route
+                    path="/sales/orders/by/payment_status"
+                    element={<OrdersByPaymentStatus />}
+                  />
+                  {/* end thống kê */}
                 </Routes>
               </Content>
             </Layout>

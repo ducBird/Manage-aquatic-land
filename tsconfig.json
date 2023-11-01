@@ -19,6 +19,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "include": ["src", "src/pages/Sales/Orders/OrdersByStatus.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -73,24 +73,45 @@ export default function SiderMenu() {
       children: [
         {
           label: "Thống kê",
-          key: "orders",
+          key: "sales-statistics",
           icon: <MdOutlineArticle />,
           children: [
             {
-              label: "Theo trạng thái đơn hàng",
-              key: "orders-status",
+              label: "Đơn hàng",
+              key: "sales-statistics-orders",
+              icon: <MdOutlineArticle />,
+              children: [
+                {
+                  label: "Theo trạng thái",
+                  key: "sales-orders-by-status",
+                },
+                {
+                  label: "Theo hình thức thanh toán",
+                  key: "sales-orders-by-payment_information",
+                },
+                {
+                  label: "Theo trạng thái thanh toán",
+                  key: "sales-orders-by-payment_status",
+                },
+                {
+                  label: "Theo số điện thoại",
+                  key: "sales-statistics-orders-number",
+                },
+                {
+                  label: "Theo ngày cần tìm",
+                  key: "sales-statistics-orders-day",
+                },
+              ],
             },
             {
-              label: "Theo hình thức thanh toán",
-              key: "orders-payment",
+              label: "Sản phẩm",
+              key: "sales-statistics-products",
+              icon: <AiOutlineShopping />,
             },
             {
-              label: "Theo số điện thoại",
-              key: "orders-number",
-            },
-            {
-              label: "Theo ngày cần tìm",
-              key: "orders-day",
+              label: "Khách hàng",
+              key: "sales-statistics-customers",
+              icon: <MdOutlinePeopleAlt />,
             },
           ],
         },

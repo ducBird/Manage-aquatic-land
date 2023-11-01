@@ -18,19 +18,34 @@ import {
 } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { axiosClient } from "../../../libraries/axiosClient";
+import { IProduct } from "../../../interfaces/Product";
+import { IEmployees } from "../../../interfaces/Employees";
 
 export default function Orders() {
   const [editFormVisible, setEditFormVisible] = React.useState(false);
-  const [selectedRecord, setSelectedRecord] = React.useState(null);
+  const [selectedRecord, setSelectedRecord] = React.useState<{
+    _id: string;
+    status: string;
+  } | null>(null);
   const [addProductsModalVisible, setAddProductsModalVisible] =
     React.useState(false);
-  const [employees, setEmployees] = React.useState([]);
-  const [selectedOrder, setSelectedOrder] = React.useState(null);
+  const [employees, setEmployees] = React.useState<IEmployees[]>([]);
+  const [selectedOrder, setSelectedOrder] = React.useState<{
+    _id: string;
+    status: string;
+    full_name: string;
+    phoneNumber: number;
+    createdAt: any;
+    shipped_date: any;
+    full_address: string;
+    employee: any;
+    order_details: any;
+  } | null>(null);
   const [refresh, setRefresh] = React.useState(false);
   const [createFormVisible, setCreateFormVisible] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  // const [loading, setLoading] = React.useState(false);
   // Products
-  const [products, setProducts] = React.useState([]);
+  const [products, setProducts] = React.useState<IProduct[]>([]);
   React.useEffect(() => {
     axiosClient.get("/products").then((response) => {
       setProducts(response.data);
@@ -48,9 +63,7 @@ export default function Orders() {
     });
   }, [refresh]);
 
-  // get list employees have roles is "shipper"
   React.useEffect(() => {
-    let shippers = [];
     axiosClient
       .get("/employees", {
         headers: {
@@ -58,16 +71,31 @@ export default function Orders() {
         },
       })
       .then((response) => {
-        response.data.map((shipper) => {
-          if (shipper.roles.includes("shipper")) {
-            shippers.push(shipper);
-          }
-        });
-        setEmployees(shippers);
+        setEmployees(response.data);
       });
-  }, []);
+  });
+  console.log(selectedOrder);
+  // console.log(employees);
+  // get list employees have roles is "shipper"
+  // React.useEffect(() => {
+  //   let shippers = [];
+  //   axiosClient
+  //     .get("/employees", {
+  //       headers: {
+  //         access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
+  //       },
+  //     })
+  //     .then((response) => {
+  //       response.data.map((shipper) => {
+  //         if (shipper.roles.includes("shipper")) {
+  //           shippers.push(shipper);
+  //         }
+  //       });
+  //       setEmployees(shippers);
+  //     });
+  // }, []);
 
-  const renderStatus = (result) => {
+  const renderStatus = (result: any) => {
     return (
       <div>
         {result && result === "WAIT FOR CONFIRMATION"
@@ -115,8 +143,8 @@ export default function Orders() {
     },
     {
       title: "Giá",
-      dataIndex: "product.price",
-      key: "product.price",
+      dataIndex: "product.total_money_order",
+      key: "product.total_money_order",
       render: (text, record) => {
         return (
           <div style={{ textAlign: "right" }}>
@@ -149,21 +177,23 @@ export default function Orders() {
           <Button
             onClick={async () => {
               setRefresh(false);
-              const currentProduct = record;
-              const response = await axiosClient.get(
-                "orders/" + selectedOrder._id
-              );
-              const currentOrder = response.data;
-              const { order_details } = currentOrder;
-              const remainorder_details = order_details.filter((x) => {
-                return (
-                  x.product_id.toString() !==
-                  currentProduct.product_id.toString()
+              if (selectedOrder !== null) {
+                const currentProduct = record;
+                const response = await axiosClient.get(
+                  "orders/" + selectedOrder._id
                 );
-              });
-              await axiosClient.patch("orders/" + selectedOrder._id, {
-                order_details: remainorder_details,
-              });
+                const currentOrder = response.data;
+                const { orderDetails } = currentOrder;
+                const remainOrderDetails = orderDetails.filter((x: any) => {
+                  return (
+                    x.productId.toString() !==
+                    currentProduct.productId.toString()
+                  );
+                });
+                await axiosClient.patch("orders/" + selectedOrder._id, {
+                  orderDetails: remainOrderDetails,
+                });
+              }
 
               setAddProductsModalVisible(false);
               message.success("Xóa thành công");
@@ -183,7 +213,7 @@ export default function Orders() {
       title: "Khách hàng",
       dataIndex: "full_name",
       key: "full_name",
-      render: (text) => {
+      render: (text: string) => {
         return <p>{text}</p>;
       },
     },
@@ -191,7 +221,7 @@ export default function Orders() {
       title: "Số điện thoại",
       dataIndex: "phoneNumber",
       key: "phoneNumber",
-      render: (text) => {
+      render: (text: number) => {
         return <p>{text}</p>;
       },
     },
@@ -204,7 +234,7 @@ export default function Orders() {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      render: (text, record) => {
+      render: (text: string) => {
         return renderStatus(text);
       },
     },
@@ -220,30 +250,22 @@ export default function Orders() {
       title: "Ngày tạo hóa đơn",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text) => {
+      render: (text: any) => {
         return <p>{text}</p>;
       },
     },
     {
       title: "Tổng tiền",
-      dataIndex: "total",
-      key: "total",
-      render: (text, record) => {
-        const { order_details } = record;
-
-        let total = 0;
-        order_details.forEach((od) => {
-          let sum = od.quantity * od.product.total;
-          total = total + sum;
-        });
-
-        return <strong>{numeral(total).format("0,0$")}</strong>;
+      dataIndex: "total_money_order",
+      key: "total_money_order",
+      render: (text: number) => {
+        return <strong>{numeral(text).format("0,0$")}</strong>;
       },
     },
     {
       title: "",
       key: "actions",
-      render: (text, record) => {
+      render: (record: any) => {
         return (
           <Button
             onClick={() => {
@@ -260,7 +282,7 @@ export default function Orders() {
       title: "",
       key: "actions",
       width: "1%",
-      render: (text, record) => {
+      render: (record: any) => {
         return (
           <Space>
             {/* Update */}
@@ -284,7 +306,7 @@ export default function Orders() {
                   .delete("/orders/" + id)
                   .then((response) => {
                     message.success("Hủy đơn hàng thành công!");
-                    setRefresh((pre) => pre + 1);
+                    setRefresh(true);
                   })
                   .catch((err) => {
                     message.error("Hủy đơn hàng thất bại!");
@@ -312,34 +334,34 @@ export default function Orders() {
   const [searchForm] = Form.useForm();
 
   // tạo mới form
-  const onFinish = (values) => {
+  const onFinish = (values: any) => {
     axiosClient
       .post("/orders", values)
       .then((response) => {
         message.success("Thêm Hóa Đơn thành công!");
         createForm.resetFields();
-        setRefresh((f) => f + 1);
+        setRefresh(true);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         message.error("Thêm Hóa Đơn thất bại!");
-        console.log({ message: message.err });
+        // console.log({ message: message.err });
       });
     console.log("👌👌👌", values);
   };
-  const onFinishFailed = (errors) => {
+  const onFinishFailed = (errors: any) => {
     console.log("💣💣💣 ", errors);
   };
 
   // update form
   // xử lý cập nhật thông tin
-  const onUpdateFinish = (values) => {
+  const onUpdateFinish = (values: any) => {
     axiosClient
-      .patch("/orders/" + selectedRecord._id, values)
-      .then((response) => {
+      .patch("/orders/" + selectedRecord?._id, values)
+      .then(() => {
         message.success("Cập nhật thành công ❤");
         updateForm.resetFields();
         // load lại form
-        setRefresh((pre) => pre + 1);
+        setRefresh(true);
         // đóng
         setEditFormVisible(false);
         console.log();
@@ -349,13 +371,13 @@ export default function Orders() {
       });
     console.log("❤", values);
   };
-  const onUpdateFinishFailed = (errors) => {
+  const onUpdateFinishFailed = (errors: any) => {
     console.log("💣", errors);
   };
 
   // validate
   // validate phone number
-  const phoneValidator = (rule, value, callback) => {
+  const phoneValidator = (value: any, callback: any) => {
     const phoneNumberPattern =
       /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/;
     if (value && !phoneNumberPattern.test(value)) {
@@ -366,7 +388,7 @@ export default function Orders() {
   };
 
   // validate ngày hóa đơn
-  const dateOfValidator = (rule, value, callback) => {
+  const dateOfValidator = (value: any, callback: any) => {
     const dateFormat = "YYYY/MM/DD"; // Định dạng ngày tháng
     const currentDate = moment(); // Lấy ngày hiện tại
     const dateOfCreatedDate = moment(value, dateFormat); // Chuyển đổi giá trị nhập vào thành kiểu moment
@@ -392,6 +414,18 @@ export default function Orders() {
       >
         Thêm mới đơn hàng
       </Button>
+      <div
+        style={{
+          margin: "20px 0",
+          color: "green",
+          fontWeight: "bold",
+          fontSize: "15px",
+        }}
+      >
+        <p>
+          Tổng số đơn hàng: <span>{orders.length}</span>
+        </p>
+      </div>
       <Modal
         centered
         open={createFormVisible}
@@ -425,13 +459,13 @@ export default function Orders() {
               name="createdAt"
               rules={[
                 { required: true, message: "Không thể để trống" },
-                {
-                  validator: dateOfValidator,
-                },
-                { type: "date", message: "Ngày không hợp lệ" },
+                // {
+                //   validator: dateOfValidator,
+                // },
+                // { type: "date", message: "Ngày không hợp lệ" },
               ]}
             >
-              <DatePicker format="YYYY/MM/DD" />
+              <DatePicker format="YYYY-MM-DD" />
             </Form.Item>
 
             {/* Shipped Date */}
@@ -440,12 +474,12 @@ export default function Orders() {
               className=""
               label="Ngày giao"
               name="shipped_date"
-              rules={[
-                {
-                  validator: dateOfValidator,
-                },
-                { type: "date", message: "Ngày không hợp lệ" },
-              ]}
+              // rules={[
+              //   {
+              //     validator: dateOfValidator,
+              //   },
+              //   { type: "date", message: "Ngày không hợp lệ" },
+              // ]}
             >
               <DatePicker format="YYYY/MM/DD" />
             </Form.Item>
@@ -533,6 +567,10 @@ export default function Orders() {
                     value: "PAYPAL",
                     label: "PAYPAL",
                   },
+                  {
+                    value: "VNPAY",
+                    label: "VNPAY",
+                  },
                 ]}
               />
             </Form.Item>
@@ -586,13 +624,75 @@ export default function Orders() {
             </Form.Item>
           </div>
         </Form>
+        <Button
+          onClick={() => {
+            setAddProductsModalVisible(true);
+            setRefresh(false);
+          }}
+        >
+          Thêm sản phẩm
+        </Button>
+
+        <Modal
+          centered
+          title="Danh sách sản phẩm"
+          open={addProductsModalVisible}
+          onCancel={() => {
+            setAddProductsModalVisible(false);
+          }}
+          onOk={() => {
+            setRefresh(true);
+          }}
+        >
+          {products &&
+            products.map((product) => {
+              return (
+                <Card key={product?._id}>
+                  <strong style={{ marginRight: "10px" }}>
+                    {product?.name}
+                  </strong>
+                  <Button
+                    onClick={async () => {
+                      const response = await axiosClient.get(
+                        "orders/" + selectedOrder?._id
+                      );
+                      const currentOrder = response.data;
+                      const { order_details } = currentOrder;
+                      const found = order_details.find(
+                        (x: any) => x.product_id === product._id
+                      );
+                      if (found) {
+                        found.quantity++;
+                      } else {
+                        order_details.push({
+                          product_id: product._id,
+                          quantity: 1,
+                        });
+                      }
+
+                      await axiosClient.patch("orders/" + selectedOrder._id, {
+                        order_details,
+                      });
+
+                      setAddProductsModalVisible(false);
+                      // RELOAD //
+
+                      setRefresh(true);
+                    }}
+                  >
+                    Add
+                  </Button>
+                </Card>
+              );
+            })}
+        </Modal>
       </Modal>
 
       <Modal
         width={"60%"}
         centered
         title="Chi tiết đơn hàng"
-        open={selectedOrder}
+        open={selectedOrder !== null}
         onCancel={() => {
           setSelectedOrder(null);
         }}
@@ -632,70 +732,6 @@ export default function Orders() {
               dataSource={selectedOrder.order_details}
               columns={productColumns}
             />
-
-            <Button
-              onClick={() => {
-                setAddProductsModalVisible(true);
-                setRefresh(false);
-              }}
-            >
-              Thêm sản phẩm
-            </Button>
-
-            <Modal
-              centered
-              title="Danh sách sản phẩm"
-              open={addProductsModalVisible}
-              onCancel={() => {
-                setAddProductsModalVisible(false);
-              }}
-              onOk={() => {
-                setRefresh(true);
-              }}
-            >
-              {products &&
-                products.map((product) => {
-                  return (
-                    <Card key={product._id}>
-                      <strong>{product.name}</strong>
-                      <Button
-                        onClick={async () => {
-                          const response = await axiosClient.get(
-                            "orders/" + selectedOrder._id
-                          );
-                          const currentOrder = response.data;
-                          const { order_details } = currentOrder;
-                          const found = order_details.find(
-                            (x) => x.product_id === product._id
-                          );
-                          if (found) {
-                            found.quantity++;
-                          } else {
-                            order_details.push({
-                              product_id: product._id,
-                              quantity: 1,
-                            });
-                          }
-
-                          await axiosClient.patch(
-                            "orders/" + selectedOrder._id,
-                            {
-                              order_details,
-                            }
-                          );
-
-                          setAddProductsModalVisible(false);
-                          // RELOAD //
-
-                          setRefresh(true);
-                        }}
-                      >
-                        Add
-                      </Button>
-                    </Card>
-                  );
-                })}
-            </Modal>
           </div>
         )}
       </Modal>
@@ -738,10 +774,10 @@ export default function Orders() {
               name="createdAt"
               rules={[
                 { required: true, message: "Không thể để trống" },
-                {
-                  validator: dateOfValidator,
-                },
-                { type: "date", message: "Ngày không hợp lệ" },
+                // {
+                //   validator: dateOfValidator,
+                // },
+                // { type: "date", message: "Ngày không hợp lệ" },
               ]}
             >
               <Input />
@@ -753,24 +789,24 @@ export default function Orders() {
               className=""
               label="Ngày giao"
               name="shipped_date"
-              rules={[
-                {
-                  validator: dateOfValidator,
-                },
-                { type: "date", message: "Ngày không hợp lệ" },
-                {
-                  validate: {
-                    validator: function (value) {
-                      if (!value) return true;
-                      if (value < createDate) {
-                        return false;
-                      }
-                      return true;
-                    },
-                    message: "Ngày giao phải nhỏ hơn ngày hiện tại",
-                  },
-                },
-              ]}
+              // rules={[
+              //   {
+              //     validator: dateOfValidator,
+              //   },
+              //   { type: "date", message: "Ngày không hợp lệ" },
+              //   {
+              //     validate: {
+              //       validator: function (value) {
+              //         if (!value) return true;
+              //         if (value < createAt) {
+              //           return false;
+              //         }
+              //         return true;
+              //       },
+              //       message: "Ngày giao phải nhỏ hơn ngày hiện tại",
+              //     },
+              //   },
+              // ]}
             >
               <Input value={Date.now()} />
             </Form.Item>
@@ -862,6 +898,10 @@ export default function Orders() {
                     value: "PAYPAL",
                     label: "PAYPAL",
                   },
+                  {
+                    value: "VNPAY",
+                    label: "VNPAY",
+                  },
                 ]}
               />
             </Form.Item>
@@ -882,9 +922,9 @@ export default function Orders() {
               name="phoneNumber"
               rules={[
                 { required: true, message: "Không thể để trống" },
-                {
-                  validator: phoneValidator,
-                },
+                // {
+                //   validator: phoneValidator,
+                // },
               ]}
             >
               <Input />
