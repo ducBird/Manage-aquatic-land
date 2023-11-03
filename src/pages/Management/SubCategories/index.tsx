@@ -212,28 +212,6 @@ export default function SubCategories() {
       ...getColumnSearchProps("name"),
     },
     {
-      title: "",
-      dataIndex: "image_url",
-      key: "image_url",
-      render: (text, record) => {
-        return (
-          <div style={{ textAlign: "left" }}>
-            {text && (
-              <img
-                style={{
-                  maxWidth: 150,
-                  width: "30%",
-                  minWidth: 70,
-                }}
-                src={`${text}`}
-                alt="image_category"
-              />
-            )}
-          </div>
-        );
-      },
-    },
-    {
       title: "Danh mục",
       dataIndex: "categoryName",
       key: "categoryName",
@@ -300,28 +278,6 @@ export default function SubCategories() {
     },
   ];
   const isDeleteColumns: ColumnsType<ISubCategory> = [
-    {
-      title: "",
-      dataIndex: "image_url",
-      key: "image_url",
-      render: (text, record) => {
-        return (
-          <div style={{ textAlign: "left" }}>
-            {text && (
-              <img
-                style={{
-                  maxWidth: 150,
-                  width: "30%",
-                  minWidth: 70,
-                }}
-                src={`${text}`}
-                alt="image_category"
-              />
-            )}
-          </div>
-        );
-      },
-    },
     {
       title: "Tên",
       dataIndex: "name",
@@ -395,7 +351,7 @@ export default function SubCategories() {
   const subcategoryField = [
     {
       name: "name",
-      label: "Name",
+      label: "Tên",
       rules: [
         {
           required: true,
@@ -405,23 +361,8 @@ export default function SubCategories() {
       component: <Input />,
     },
     {
-      name: "file",
-      label: "Hình ảnh",
-      component: (
-        <Upload
-          showUploadList={true}
-          beforeUpload={(file) => {
-            setFile(file);
-            return false;
-          }}
-        >
-          <Button icon={<UploadOutlined />}>Tải lên hình ảnh</Button>
-        </Upload>
-      ),
-    },
-    {
       name: "category_id",
-      label: "Category",
+      label: "Danh mục",
       rules: [
         {
           required: true,

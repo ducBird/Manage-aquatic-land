@@ -207,6 +207,8 @@ export default function VariantModal(props: IProps) {
               console.log(err);
             });
         }
+        variantForm.resetFields();
+        setRefresh((f) => f + 1);
         console.log("ok");
 
         setOpenDetailVariant(false);

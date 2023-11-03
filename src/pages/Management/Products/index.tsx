@@ -15,6 +15,7 @@ import {
   DatePicker,
   Select,
   InputRef,
+  Switch,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import {
@@ -67,6 +68,8 @@ export default function Products() {
 
   //--- state xử lý render khi có sự thay đổi ở useEffect ---//
   const [refresh, setRefresh] = useState(0);
+  //--- state kiểm tra sản phẩm có biến thể không ---//
+  const [isVariant, setIsVariant] = useState(false);
   //----------------------------------------------------------------//
   const { users } = useUser((state) => state) as any;
   const userString = localStorage.getItem("user-storage");
@@ -582,14 +585,14 @@ export default function Products() {
       name: "sub_category_id",
       label: "Danh mục con",
       /* sử dụng defaultValue ở phía dưới sẽ bị antd cảnh báo nên sử dụng initialValue cho field ở <CustomForm /> */
-      initialValue: editFormVisible
-        ? [
-            {
-              value: selectedRecord?.sub_category?._id,
-              label: selectedRecord?.sub_category?.name,
-            },
-          ]
-        : "",
+      // initialValue: editFormVisible
+      //   ? [
+      //       {
+      //         value: selectedRecord?.sub_category?._id,
+      //         label: selectedRecord?.sub_category?.name,
+      //       },
+      //     ]
+      //   : "",
       component: !editFormVisible ? (
         <Select
           allowClear
@@ -622,6 +625,47 @@ export default function Products() {
               };
             })
           }
+        />
+      ),
+    },
+    {
+      name: "is_variant",
+      label: "Biến thể",
+      initialValue: false,
+      component: (
+        <Switch
+          checked={isVariant}
+          checkedChildren="Có"
+          unCheckedChildren="Không"
+          onChange={() => {
+            setIsVariant(!isVariant);
+          }}
+        />
+      ),
+    },
+    {
+      name: "price",
+      label: "Giá",
+      initialValue: undefined,
+      noStyle: isVariant ? false : true,
+      component: (
+        <InputNumber
+          style={{
+            display: isVariant ? "" : "none",
+          }}
+        />
+      ),
+    },
+    {
+      name: "stock",
+      label: "Số lượng",
+      initialValue: undefined,
+      noStyle: isVariant ? false : true,
+      component: (
+        <InputNumber
+          style={{
+            display: isVariant ? "" : "none",
+          }}
         />
       ),
     },
