@@ -69,7 +69,7 @@ function OrdersByStatus() {
   );
   // Sử dụng filter để lọc ra các hóa đơn có (payment_information === paypal)
   const paymentCod = orders.filter(
-    (order) => order?.payment_information === "COD"
+    (order) => order?.payment_information === "CASH"
   );
   // Orders
   const columns = [

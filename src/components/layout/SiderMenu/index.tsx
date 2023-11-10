@@ -12,13 +12,14 @@ import {
   MdOutlineManageAccounts,
   MdOutlineCategory,
 } from "react-icons/md";
-import { FaWarehouse } from "react-icons/fa";
 import { FaShippingFast } from "react-icons/fa";
 import { RiLuggageDepositLine } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { Menu } from "antd";
+import { useUser } from "../../../hooks/useUser";
 
 export default function SiderMenu() {
+  const { users } = useUser((state) => state);
   const navigate = useNavigate();
   const itemsSider = [
     { label: "Trang Chủ", key: "home", icon: <AiOutlineHome /> }, // remember to pass the key prop
@@ -127,28 +128,13 @@ export default function SiderMenu() {
       key: "shipping",
       icon: <FaShippingFast />,
       children: [
-        { label: "Chưa vận chuyển", key: "orders-notshipped" },
+        { label: "Đơn mua", key: "shipping-purchase" },
         {
-          label: "Đang vận chuyển",
-          key: "orders-shipping",
-        },
-        {
-          label: "Đã vận chuyển",
-          key: "orders-shipped",
+          label: "Đơn trả",
+          key: "shipping-return",
         },
       ],
     },
-    // {
-    //   label: "Quản lý kho",
-    //   key: "warehouse",
-    //   icon: <FaWarehouse />,
-    //   children: [
-    //     {
-    //       label: "Đơn hàng đang đợi vận chuyển",
-    //       key: "warehouse-shipping",
-    //     },
-    //   ],
-    // },
     { label: "Cài Đặt", key: "settings", icon: <AiOutlineSetting /> }, // which is required
   ];
   const itemsSiderShipper = [
@@ -157,27 +143,10 @@ export default function SiderMenu() {
       key: "shipping",
       icon: <FaShippingFast />,
       children: [
-        { label: "Chưa vận chuyển", key: "orders-notshipped" },
+        { label: "Đơn mua", key: "shipping-purchase" },
         {
-          label: "Đang vận chuyển",
-          key: "orders-shipping",
-        },
-        {
-          label: "Đã vận chuyển",
-          key: "orders-shipped",
-        },
-      ],
-    },
-  ];
-  const itemsSiderWarehouse = [
-    {
-      label: "Quản lý kho",
-      key: "warehouse",
-      icon: <FaWarehouse />,
-      children: [
-        {
-          label: "Đơn hàng vận chuyển",
-          key: "warehouse-shipping",
+          label: "Đơn trả",
+          key: "shipping-return",
         },
       ],
     },
@@ -185,7 +154,7 @@ export default function SiderMenu() {
   return (
     <div>
       <Menu
-        items={itemsSider}
+        items={users.user.roles === "admin" ? itemsSider : itemsSiderShipper}
         mode="inline"
         onClick={({ item, key }) => {
           navigate("/" + key.split("-").join("/")); //

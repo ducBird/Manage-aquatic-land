@@ -6,6 +6,7 @@ export interface IEmployees {
   phone_number?: string;
   address?: string;
   active?: boolean;
+  roles?: string;
   is_delete?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
