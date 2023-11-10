@@ -3,7 +3,6 @@ import numeral from "numeral";
 import {
   Table,
   Button,
-  Card,
   Modal,
   Descriptions,
   Divider,
@@ -13,28 +12,32 @@ import {
   Select,
   Space,
   Popconfirm,
+  Upload,
 } from "antd";
 import {
+  UploadOutlined,
   DeleteOutlined,
   EditOutlined,
-  PlusSquareOutlined,
 } from "@ant-design/icons";
 import { axiosClient } from "../../../libraries/axiosClient";
+import axios from "axios";
+import { API_URL } from "../../../constants/URLS";
 import { useUser } from "../../../hooks/useUser";
 
-export default function UnresolvedOrder() {
+export default function ReturnOrder() {
   const [editFormVisible, setEditFormVisible] = React.useState(false);
+  const [isOpenFormAccept, setIsOpenFormAccept] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [employees, setEmployees] = React.useState([]);
   const [selectedOrder, setSelectedOrder] = React.useState(null);
   const [orders, setOrders] = React.useState([]);
-  const [orderShipping, setOrderShipping] = React.useState([]);
   const [refresh, setRefresh] = React.useState(false);
+  const [file, setFile] = useState();
   const { users } = useUser((state) => state);
 
   // GET ORDER HAVE CONFIRMED ORDER
   React.useEffect(() => {
-    let orderUnresolved = [];
+    let orderResolving = [];
     if (selectedOrder) {
       axiosClient.get("orders/" + selectedOrder._id).then((response) => {
         setSelectedOrder(response.data);
@@ -51,41 +54,25 @@ export default function UnresolvedOrder() {
     ) {
       axiosClient.get("/orders").then((response) => {
         response.data.map((order) => {
-          if (order.status.includes("CONFIRMED ORDER")) {
-            orderUnresolved.push(order);
+          if (order.status.includes("DELIVERY IN PROGRESS")) {
+            orderResolving.push(order);
           }
         });
-        setOrders(orderUnresolved);
+        setOrders(orderResolving);
       });
     } else {
       axiosClient.get("/orders").then((response) => {
         response.data.map((order) => {
           if (
             order.employeeId === users.id &&
-            order.status.includes("CONFIRMED ORDER")
+            order.status.includes("DELIVERY IN PROGRESS")
           ) {
-            orderUnresolved.push(order);
+            orderResolving.push(order);
           }
         });
-        setOrders(orderUnresolved);
+        setOrders(orderResolving);
       });
     }
-  }, [refresh]);
-
-  //GET ORDER HAVE SHIPPING CONFIRMATION
-  React.useEffect(() => {
-    let orderConfirmShipping = [];
-    axiosClient.get("/orders").then((response) => {
-      response.data.map((order) => {
-        if (
-          order.employeeId === users.id &&
-          order.status.includes("SHIPPING CONFIRMATION")
-        ) {
-          orderConfirmShipping.push(order);
-        }
-      });
-      setOrderShipping(orderConfirmShipping);
-    });
   }, [refresh]);
 
   // get list employees
@@ -95,22 +82,28 @@ export default function UnresolvedOrder() {
     });
   }, []);
 
-  const renderStatus = (result) => {
+  const renderStatus = (result: any) => {
     return (
       <div>
-        {result && result === "WAITING CONFIRMATION ORDER"
-          ? "Đang Chờ Xác Nhận"
-          : result === "CONFIRMED ORDER"
-          ? "Đã Xác Nhận Đơn Hàng"
-          : result === "SHIPPING CONFIRMATION"
-          ? "Xác Nhận Vận Chuyển"
-          : result === "DELIVERY IN PROGRESS"
-          ? "Đang Giao Hàng"
-          : result === "DELIVERY SUCCESS"
-          ? "Giao Hàng Thành Công"
-          : result === "RECEIVED ORDER"
-          ? "Đã Nhận Hàng"
-          : "Đã Hủy Đơn Hàng"}
+        {result && result === "WAIT FOR CONFIRMATION"
+          ? "Chờ xác nhận"
+          : result === "WAITING FOR PICKUP"
+          ? "Chờ lấy hàng"
+          : result === "DELIVERING"
+          ? "Đang giao"
+          : result === "DELIVERED"
+          ? "Đã giao"
+          : result === "RECEIVED"
+          ? "Đã nhận"
+          : result === "CANCELLED"
+          ? "Đã hủy"
+          : result === "RETURNS"
+          ? "Trả hàng"
+          : result === "RETURNING"
+          ? "Đang trả hàng"
+          : result === "RETURNED"
+          ? "Đã trả"
+          : "Null"}
       </div>
     );
   };
@@ -255,28 +248,17 @@ export default function UnresolvedOrder() {
                 }}
               />
             ) : (
-              <Popconfirm
-                title="Nhận đơn hàng và vận chuyển?"
-                onConfirm={() => {
-                  //delete
-                  const id = record._id;
-                  axiosClient
-                    .patch("/orders/" + id, { status: "SHIPPING CONFIRMATION" })
-                    .then((response) => {
-                      message.success("Nhận đơn thành công!");
-                      setRefresh((pre) => pre + 1);
-                    })
-                    .catch((err) => {
-                      message.error("Nhận đơn thất bại!");
-                    });
-                  console.log("SHIPPING CONFIRMATION", record);
+              <Button
+                onClick={() => {
+                  setSelectedRecord(record);
+                  console.log("selectes", record);
+                  // acceptForm.setFieldsValue(record);
+                  setIsOpenFormAccept(true);
                 }}
-                onCancel={() => {}}
-                okText="Có"
-                cancelText="Không"
+                className="text-green-500"
               >
-                <Button>Nhận</Button>
-              </Popconfirm>
+                Xác Nhận
+              </Button>
             )}
             {/* delete */}
             {users.roles.some((role) => {
@@ -287,7 +269,7 @@ export default function UnresolvedOrder() {
               );
             }) ? (
               <Popconfirm
-                title="Bạn muốn giao đơn hàng cho nhân viên khác không?"
+                title="Bạn có muốn hủy đơn hàng không?"
                 onConfirm={() => {
                   //Cancel order
                   const id = record._id;
@@ -312,30 +294,7 @@ export default function UnresolvedOrder() {
                 <Button danger icon={<DeleteOutlined />} />
               </Popconfirm>
             ) : (
-              <Popconfirm
-                title="Bạn sẽ không nhận vận chuyển đơn hàng này?"
-                onConfirm={() => {
-                  //Cancel order
-                  const id = record._id;
-                  axiosClient
-                    .patch("/orders/" + id, {
-                      employeeId: null,
-                    })
-                    .then((response) => {
-                      message.success("Hủy đơn hàng thành công!");
-                      setRefresh((pre) => pre + 1);
-                    })
-                    .catch((err) => {
-                      message.error("Hủy đơn hàng thất bại!");
-                    });
-                  console.log("Cancel order", record);
-                }}
-                onCancel={() => {}}
-                okText="Có"
-                cancelText="Không"
-              >
-                <Button danger>Hủy</Button>
-              </Popconfirm>
+              <></>
             )}
           </Space>
         );
@@ -343,80 +302,10 @@ export default function UnresolvedOrder() {
     },
   ];
 
-  // Order have status == "SHIPPING CONFIRMATION"
-  const shippingConfirmColumns = [
-    {
-      title: "Khách hàng",
-      dataIndex: "fullName",
-      key: "fullName",
-      render: (text) => {
-        return <p>{text}</p>;
-      },
-    },
-    {
-      title: "Số điện thoại",
-      dataIndex: "phoneNumber",
-      key: "phoneNumber",
-      render: (text) => {
-        return <p>{text}</p>;
-      },
-    },
-    {
-      title: "Hình thức thanh toán",
-      dataIndex: "paymentType",
-      key: "paymentType",
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (text, record) => {
-        return renderStatus(text);
-      },
-    },
-    {
-      title: "Nhân viên",
-      dataIndex: "employee",
-      key: "employee",
-      render: (text, record) => {
-        return <strong>{record.employee?.fullName}</strong>;
-      },
-    },
-    {
-      title: "Tổng tiền",
-      dataIndex: "total",
-      key: "total",
-      render: (text, record) => {
-        const { orderDetails } = record;
-
-        let total = 0;
-        orderDetails.forEach((od) => {
-          let sum = od.quantity * od.product.total;
-          total = total + sum;
-        });
-
-        return <strong>{numeral(total).format("0,0$")}</strong>;
-      },
-    },
-    {
-      title: "",
-      key: "details",
-      render: (text, record) => {
-        return (
-          <Button
-            onClick={() => {
-              setSelectedOrder(record);
-            }}
-          >
-            Xem
-          </Button>
-        );
-      },
-    },
-  ];
-
   // update form
   const [updateForm] = Form.useForm();
+  // accept delivery progress ship form
+  const [acceptForm] = Form.useForm();
 
   // update form
   // xử lý cập nhật thông tin
@@ -441,9 +330,45 @@ export default function UnresolvedOrder() {
     console.log("💣", errors);
   };
 
+  // accept delivery progress ship form
+  const onDeliverySuccess = (values) => {
+    const { file } = values;
+    axiosClient
+      .patch("/orders/" + selectedRecord._id, {
+        file,
+        status: "DELIVERY SUCCESS",
+        shippedDate: Date.now(),
+      })
+      .then((response) => {
+        const { _id } = response.data;
+        const formData = new FormData();
+        formData.append("file", file.file);
+        // console.log(file.file);
+        axios
+          .post(`${API_URL}/upload-image/orders/${_id}`, formData)
+          .then((response) => {
+            console.log("ok");
+            setRefresh((f) => f + 1);
+            setIsOpenFormAccept(false);
+            message.success("Xác nhận giao hàng thành công!");
+          })
+          .catch((err) => {
+            message.error("Tải lên hình ảnh thất bại!");
+          });
+      })
+      .catch((err) => {
+        console.log(err);
+        message.error("Cập nhật thất bại 😥");
+      });
+    console.log("❤", values);
+  };
+  const onDeliverySuccessFailed = (errors) => {
+    console.log("💣", errors);
+  };
+
   return (
     <div>
-      <h1 className="p-2 mb-5 text-xl">📦 Đơn Hàng Chờ Vận Chuyển</h1>
+      <h1 className="p-2 mb-5 text-xl">🛵 Đơn Hàng Đang Vận Chuyển</h1>
       {/* Modal view detail order */}
       <Modal
         centered
@@ -498,7 +423,7 @@ export default function UnresolvedOrder() {
       </Modal>
       {/* Table view order have status == "COMFIRMED ORDER" */}
       <Table rowKey="_id" dataSource={orders} columns={columns} />
-      {/* update form */}
+      {/* update form for roles = directors, administrator, managers */}
       <Modal
         centered
         open={editFormVisible}
@@ -592,12 +517,12 @@ export default function UnresolvedOrder() {
               <Select
                 options={[
                   {
-                    value: "CONFIRMED ORDER",
-                    label: "Đã Xác Nhận Đơn Hàng",
-                  },
-                  {
                     value: "SHIPPING CONFIRMATION",
                     label: "Xác Nhận Vận Chuyển",
+                  },
+                  {
+                    value: "DELIVERY IN PROGRESS",
+                    label: "Đang Giao Hàng",
                   },
                 ]}
               />
@@ -668,7 +593,7 @@ export default function UnresolvedOrder() {
             </Form.Item>
             {/* Employee */}
             <Form.Item
-              disabled={true}
+              className=""
               label="Nhân viên"
               name="employeeId"
               rules={[{ required: true, message: "Please selected empoyees!" }]}
@@ -688,25 +613,54 @@ export default function UnresolvedOrder() {
           </div>
         </Form>
       </Modal>
-      {/* Table view order have status == "COMFIRMED ORDER" */}
-      {users.roles.some((role) => {
-        return (
-          role === "directors" ||
-          role === "administrator" ||
-          role === "managers"
-        );
-      }) ? (
-        <></>
-      ) : (
-        <div>
-          <h3>✔ Đơn Vận Chuyển Đã Nhận</h3>
-          <Table
-            rowKey="_id"
-            dataSource={orderShipping}
-            columns={shippingConfirmColumns}
-          />
-        </div>
-      )}
+      {/* form accept delivery success */}
+      <Modal
+        open={isOpenFormAccept}
+        title="Xác nhận đã giao hàng"
+        onOk={() => {
+          acceptForm.submit();
+        }}
+        onCancel={() => {
+          setIsOpenFormAccept(false);
+        }}
+        okText="Lưu thông tin"
+        cancelText="Đóng"
+      >
+        <Form
+          form={acceptForm}
+          name="accept-form"
+          labelCol={{ span: 10 }}
+          wrapperCol={{ span: 16 }}
+          onFinish={onDeliverySuccess}
+          onFinishFailed={onDeliverySuccessFailed}
+          autoComplete="off"
+        >
+          <div className="w-[80%]">
+            <Form.Item
+              label="Hình ảnh xác nhận"
+              name="file"
+              rules={[
+                {
+                  required: true,
+                  message: "Hình ảnh xác nhận không được để trống!",
+                },
+              ]}
+            >
+              <Upload
+                showUploadList={true}
+                beforeUpload={(file) => {
+                  setFile(file);
+                  return false;
+                }}
+              >
+                <Button>
+                  <UploadOutlined size={"20px"} />
+                </Button>
+              </Upload>
+            </Form.Item>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }

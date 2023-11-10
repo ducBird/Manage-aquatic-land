@@ -20,6 +20,8 @@ import "numeral/locales/vi";
 import OrdersByStatus from "./pages/Sales/Orders/OrdersByStatus";
 import OrdersByPaymentInformation from "./pages/Sales/Orders/OrdersByPaymentInformation";
 import OrdersByPaymentStatus from "./pages/Sales/Orders/OrdersByPaymentStatus";
+import PurchaseOrder from "./pages/Shipping/PurchaseOrder";
+import ReturnOrder from "./pages/Shipping/ReturnOrder";
 numeral.locale("vi");
 
 const { Header, Content, Sider } = Layout;
@@ -114,6 +116,12 @@ function App() {
                     element={<OrdersByPaymentStatus />}
                   />
                   {/* end thống kê */}
+                  {/* Vận chuyển */}
+                  <Route
+                    path="/shipping/purchase"
+                    element={<PurchaseOrder />}
+                  />
+                  <Route path="/shipping/return" element={<ReturnOrder />} />
                 </Routes>
               </Content>
             </Layout>

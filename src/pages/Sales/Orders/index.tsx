@@ -29,7 +29,10 @@ export default function Orders() {
   } | null>(null);
   const [addProductsModalVisible, setAddProductsModalVisible] =
     React.useState(false);
-  const [employees, setEmployees] = React.useState<IEmployees[]>([]);
+  const [saleEmployees, setSaleEmployees] = React.useState<IEmployees[]>([]);
+  const [shipperEmployees, setShipperEmployees] = React.useState<IEmployees[]>(
+    []
+  );
   const [selectedOrder, setSelectedOrder] = React.useState<{
     _id: string;
     status: string;
@@ -41,8 +44,9 @@ export default function Orders() {
     employee: any;
     order_details: any;
   } | null>(null);
-  const [refresh, setRefresh] = React.useState(false);
+  const [refresh, setRefresh] = React.useState(0);
   const [createFormVisible, setCreateFormVisible] = React.useState(false);
+  const [openModalOrderDetails, setOpenModalDetails] = React.useState(false);
   // const [loading, setLoading] = React.useState(false);
   // Products
   const [products, setProducts] = React.useState<IProduct[]>([]);
@@ -53,17 +57,22 @@ export default function Orders() {
   }, [refresh]);
 
   React.useEffect(() => {
-    if (selectedOrder) {
-      axiosClient.get("/orders/" + selectedOrder._id).then((response) => {
-        setSelectedOrder(response.data);
-      });
-    }
     axiosClient.get("/orders").then((response) => {
       setOrders(response.data);
     });
   }, [refresh]);
 
+  // React.useEffect(() => {
+  //   if (selectedOrder) {
+  //     axiosClient.get("/orders/" + selectedOrder._id).then((response) => {
+  //       setSelectedOrder(response.data);
+  //     });
+  //   }
+  // }, [selectedOrder]);
+
   React.useEffect(() => {
+    const shippers: IEmployees[] = [];
+    const sales: IEmployees[] = [];
     axiosClient
       .get("/employees", {
         headers: {
@@ -71,29 +80,18 @@ export default function Orders() {
         },
       })
       .then((response) => {
-        setEmployees(response.data);
+        response.data.map((employee: IEmployees) => {
+          if (employee.roles === "shipper") {
+            shippers.push(employee);
+          } else if (employee.roles === "sales") {
+            sales.push(employee);
+          }
+        });
+        setShipperEmployees(shippers);
+        setSaleEmployees(sales);
       });
-  });
-  console.log(selectedOrder);
-  // console.log(employees);
-  // get list employees have roles is "shipper"
-  // React.useEffect(() => {
-  //   let shippers = [];
-  //   axiosClient
-  //     .get("/employees", {
-  //       headers: {
-  //         access_token: `Bearer ${window.localStorage.getItem("access_token")}`,
-  //       },
-  //     })
-  //     .then((response) => {
-  //       response.data.map((shipper) => {
-  //         if (shipper.roles.includes("shipper")) {
-  //           shippers.push(shipper);
-  //         }
-  //       });
-  //       setEmployees(shippers);
-  //     });
-  // }, []);
+  }, []);
+  // console.log("selectedOrder", selectedOrder);
 
   const renderStatus = (result: any) => {
     return (
@@ -106,6 +104,8 @@ export default function Orders() {
           ? "Đang giao"
           : result === "DELIVERED"
           ? "Đã giao"
+          : result === "RECEIVED"
+          ? "Đã nhận"
           : result === "CANCELLED"
           ? "Đã hủy"
           : result === "RETURNS"
@@ -118,14 +118,6 @@ export default function Orders() {
       </div>
     );
   };
-  // CHỜ XÁC NHẬN || WAIT FOR CONFIRMATION
-  // CHỜ LẤY HÀNG || WAITING FOR PICKUP
-  // ĐANG GIAO || DELIVERING
-  // ĐÃ GIAO || DELIVERED
-  // ĐÃ HỦY || CANCELLED
-  // TRẢ HÀNG || RETURNS
-  // ĐANG TRẢ HÀNG || RETURNING
-  // ĐÃ TRẢ || RETURNED
 
   const productColumns = [
     {
@@ -176,7 +168,6 @@ export default function Orders() {
         return (
           <Button
             onClick={async () => {
-              setRefresh(false);
               if (selectedOrder !== null) {
                 const currentProduct = record;
                 const response = await axiosClient.get(
@@ -197,7 +188,7 @@ export default function Orders() {
 
               setAddProductsModalVisible(false);
               message.success("Xóa thành công");
-              setRefresh(true);
+              setRefresh((f) => f + 1);
             }}
           >
             Xóa
@@ -270,6 +261,7 @@ export default function Orders() {
           <Button
             onClick={() => {
               setSelectedOrder(record);
+              setOpenModalDetails(true);
             }}
           >
             Xem
@@ -306,7 +298,7 @@ export default function Orders() {
                   .delete("/orders/" + id)
                   .then((response) => {
                     message.success("Hủy đơn hàng thành công!");
-                    setRefresh(true);
+                    setRefresh((f) => f + 1);
                   })
                   .catch((err) => {
                     message.error("Hủy đơn hàng thất bại!");
@@ -340,7 +332,7 @@ export default function Orders() {
       .then((response) => {
         message.success("Thêm Hóa Đơn thành công!");
         createForm.resetFields();
-        setRefresh(true);
+        setRefresh((f) => f + 1);
       })
       .catch((err: any) => {
         message.error("Thêm Hóa Đơn thất bại!");
@@ -361,7 +353,7 @@ export default function Orders() {
         message.success("Cập nhật thành công ❤");
         updateForm.resetFields();
         // load lại form
-        setRefresh(true);
+        setRefresh((f) => f + 1);
         // đóng
         setEditFormVisible(false);
         console.log();
@@ -409,7 +401,6 @@ export default function Orders() {
         className="bg-blue-500 text-white font-bold mb-5 mt-5"
         onClick={() => {
           setCreateFormVisible(true);
-          console.log("ok");
         }}
       >
         Thêm mới đơn hàng
@@ -451,39 +442,6 @@ export default function Orders() {
           autoComplete="off"
         >
           <div className="w-[100%]">
-            {/* Created Date */}
-            <Form.Item
-              hasFeedback
-              className=""
-              label="Ngày tạo"
-              name="createdAt"
-              rules={[
-                { required: true, message: "Không thể để trống" },
-                // {
-                //   validator: dateOfValidator,
-                // },
-                // { type: "date", message: "Ngày không hợp lệ" },
-              ]}
-            >
-              <DatePicker format="YYYY-MM-DD" />
-            </Form.Item>
-
-            {/* Shipped Date */}
-            <Form.Item
-              hasFeedback
-              className=""
-              label="Ngày giao"
-              name="shipped_date"
-              // rules={[
-              //   {
-              //     validator: dateOfValidator,
-              //   },
-              //   { type: "date", message: "Ngày không hợp lệ" },
-              // ]}
-            >
-              <DatePicker format="YYYY/MM/DD" />
-            </Form.Item>
-
             {/* Status */}
             <Form.Item
               hasFeedback
@@ -500,6 +458,7 @@ export default function Orders() {
                         "WAITING FOR PICKUP",
                         "DELIVERING",
                         "DELIVERED",
+                        "RECEIVED",
                         "CANCELLED",
                         "RETURNS",
                         "RETURNING",
@@ -515,10 +474,20 @@ export default function Orders() {
               ]}
             >
               <Select
+                defaultValue={[
+                  {
+                    value: "RECEIVED",
+                    label: "Đã nhận",
+                  },
+                ]}
                 options={[
                   {
                     value: "WAIT FOR CONFIRMATION",
                     label: "Chờ xác nhận",
+                  },
+                  {
+                    value: "RECEIVED",
+                    label: "Đã nhận",
                   },
                 ]}
               />
@@ -534,12 +503,23 @@ export default function Orders() {
               <Input />
             </Form.Item>
 
-            {/* Shipping Address */}
+            {/* shipping_information */}
             <Form.Item
               hasFeedback
               className=""
-              label="Địa chỉ giao hàng"
-              name="full_address"
+              label="Địa chỉ cụ thể"
+              name="shipping_information"
+              rules={[{ required: true, message: "Không thể để trống" }]}
+            >
+              <Input />
+            </Form.Item>
+
+            {/* shipping_city */}
+            <Form.Item
+              hasFeedback
+              className=""
+              label="Tỉnh thành"
+              name="shipping_city"
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
               <Input />
@@ -556,8 +536,8 @@ export default function Orders() {
               <Select
                 options={[
                   {
-                    value: "COD",
-                    label: "COD",
+                    value: "CASH",
+                    label: "CASH",
                   },
                   {
                     value: "MOMO",
@@ -594,11 +574,8 @@ export default function Orders() {
                   required: true,
                   message: "Số điện thoại không được để trống!",
                 },
-                { min: 10, message: "Số điện thoại không quá 10 chữ số!" },
+                { min: 10, message: "Số điện thoại dưới 10 chữ số!" },
                 { max: 10, message: "Số điện thoại không quá 10 chữ số!" },
-                {
-                  validator: phoneValidator,
-                },
               ]}
             >
               <Input />
@@ -612,8 +589,8 @@ export default function Orders() {
             >
               <Select
                 options={
-                  employees &&
-                  employees.map((employee) => {
+                  saleEmployees &&
+                  saleEmployees.map((employee) => {
                     return {
                       value: employee._id,
                       label: employee.full_name,
@@ -627,7 +604,7 @@ export default function Orders() {
         <Button
           onClick={() => {
             setAddProductsModalVisible(true);
-            setRefresh(false);
+            setRefresh((f) => f + 1);
           }}
         >
           Thêm sản phẩm
@@ -641,7 +618,7 @@ export default function Orders() {
             setAddProductsModalVisible(false);
           }}
           onOk={() => {
-            setRefresh(true);
+            setRefresh((f) => f + 1);
           }}
         >
           {products &&
@@ -677,7 +654,7 @@ export default function Orders() {
                       setAddProductsModalVisible(false);
                       // RELOAD //
 
-                      setRefresh(true);
+                      setRefresh((f) => f + 1);
                     }}
                   >
                     Add
@@ -692,9 +669,9 @@ export default function Orders() {
         width={"60%"}
         centered
         title="Chi tiết đơn hàng"
-        open={selectedOrder !== null}
+        open={openModalOrderDetails}
         onCancel={() => {
-          setSelectedOrder(null);
+          setOpenModalDetails(false);
         }}
       >
         {selectedOrder && (
@@ -759,11 +736,11 @@ export default function Orders() {
           onFinish={onUpdateFinish}
           onFinishFailed={onUpdateFinishFailed}
           autoComplete="off"
-          disabled={
-            selectedRecord && selectedRecord.status === "WAIT FOR CONFIRMATION"
-              ? false
-              : true
-          }
+          // disabled={
+          //   selectedRecord && selectedRecord.status === "WAIT FOR CONFIRMATION"
+          //     ? false
+          //     : true
+          // }
         >
           <div className="w-[80%]">
             {/* Created Date */}
@@ -865,12 +842,23 @@ export default function Orders() {
               <Input />
             </Form.Item>
 
-            {/* Shipping Address */}
+            {/* shipping_information */}
             <Form.Item
               hasFeedback
               className=""
-              label="Địa chỉ giao hàng"
-              name="full_address"
+              label="Địa chỉ cụ thể"
+              name="shipping_information"
+              rules={[{ required: true, message: "Không thể để trống" }]}
+            >
+              <Input />
+            </Form.Item>
+
+            {/* shipping_city */}
+            <Form.Item
+              hasFeedback
+              className=""
+              label="Tỉnh thành"
+              name="shipping_city"
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
               <Input />
@@ -887,8 +875,8 @@ export default function Orders() {
               <Select
                 options={[
                   {
-                    value: "COD",
-                    label: "COD",
+                    value: "CASH",
+                    label: "CASH",
                   },
                   {
                     value: "MOMO",
@@ -938,8 +926,8 @@ export default function Orders() {
             >
               <Select
                 options={
-                  employees &&
-                  employees.map((employee) => {
+                  shipperEmployees &&
+                  shipperEmployees.map((employee) => {
                     return {
                       value: employee._id,
                       label: employee.full_name,
