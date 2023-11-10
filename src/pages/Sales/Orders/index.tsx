@@ -74,7 +74,7 @@ export default function Orders() {
         setEmployees(response.data);
       });
   });
-  console.log(selectedOrder);
+  // console.log(selectedOrder);
   // console.log(employees);
   // get list employees have roles is "shipper"
   // React.useEffect(() => {
@@ -270,6 +270,7 @@ export default function Orders() {
           <Button
             onClick={() => {
               setSelectedOrder(record);
+              console.log(record);
             }}
           >
             Xem
