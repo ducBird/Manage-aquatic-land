@@ -347,6 +347,7 @@ export default function Orders() {
 
   // update form
   // xử lý cập nhật thông tin
+  console.log("selectedRecord", selectedRecord);
   const onUpdateFinish = (values: any) => {
     axiosClient
       .patch("/orders/" + selectedRecord?._id, values)
@@ -537,8 +538,8 @@ export default function Orders() {
               <Select
                 options={[
                   {
-                    value: "CASH",
-                    label: "CASH",
+                    value: "COD",
+                    label: "COD",
                   },
                   {
                     value: "MOMO",
@@ -876,8 +877,8 @@ export default function Orders() {
               <Select
                 options={[
                   {
-                    value: "CASH",
-                    label: "CASH",
+                    value: "COD",
+                    label: "COD",
                   },
                   {
                     value: "MOMO",

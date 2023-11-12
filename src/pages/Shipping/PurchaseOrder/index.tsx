@@ -708,6 +708,7 @@ export default function PurchaseOrder() {
       .patch("/orders/" + selectedRecord._id, {
         file,
         status: "DELIVERED",
+        payment_status: true,
         shipped_date: Date.now(),
       })
       .then((response) => {
@@ -942,8 +943,8 @@ export default function PurchaseOrder() {
               <Select
                 options={[
                   {
-                    value: "CASH",
-                    label: "CASH",
+                    value: "COD",
+                    label: "COD",
                   },
                   {
                     value: "MOMO",

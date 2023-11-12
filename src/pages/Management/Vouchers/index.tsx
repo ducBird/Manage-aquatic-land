@@ -13,17 +13,21 @@ import {
   InputNumber,
   DatePicker,
   Switch,
+  Upload,
 } from "antd";
 import moment from "moment";
 import {
   DeleteOutlined,
   EditOutlined,
   QuestionCircleOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { axiosClient } from "../../../libraries/axiosClient";
 import style from "./vouchers.module.css";
 import CustomForm from "../../../components/common/CustomForm";
 import TextArea from "antd/es/input/TextArea";
+import axios from "axios";
+import { API_URL } from "../../../constants/URLS";
 
 function Vouchers() {
   const [vouchers, setVouchers] = useState<IVouchers[]>([]);
@@ -34,6 +38,8 @@ function Vouchers() {
   const [editFormVisible, setEditFormVisible] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isFreeShipping, setIsFreeShipping] = useState(false);
+  // File
+  const [file, setFile] = useState<any>();
   // Form
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
@@ -52,22 +58,49 @@ function Vouchers() {
 
   // columns vouchers
   const columns: ColumnsType<IVouchers> = [
+    {
+      title: "Hình ảnh",
+      dataIndex: "image_url",
+      key: "image_url",
+      render: (text) => {
+        return (
+          <div style={{ textAlign: "center" }}>
+            {text && (
+              <img
+                style={{ maxWidth: 150, width: "30%", minWidth: 70 }}
+                src={`${text}`}
+                alt="image_voucher"
+              />
+            )}
+          </div>
+        );
+      },
+    },
     { title: "Tên vouchers", dataIndex: "name", key: "name" },
     { title: "Giá", dataIndex: "price", key: "price" },
     {
       title: "Phần trăm",
       dataIndex: "discountPercentage",
       key: "discountPercentage",
+      render: (text) => {
+        return <div>{text} %</div>;
+      },
     },
     {
       title: "Giá giảm tối đa",
       dataIndex: "maxDiscountAmount",
       key: "maxDiscountAmount",
+      render: (text) => {
+        return <div>{text} %</div>;
+      },
     },
     {
       title: "Giá đơn hàng tối thiểu",
       dataIndex: "minimumOrderAmount",
       key: "minimumOrderAmount",
+      render: (text) => {
+        return <div>{text} %</div>;
+      },
     },
     // {
     //   title: "Điều kiện",
@@ -97,6 +130,7 @@ function Vouchers() {
         }
       },
     },
+
     {
       title: "",
       key: "actions",
@@ -392,6 +426,21 @@ function Vouchers() {
       // component: <DatePicker format={"YYYY/MM/DD-HH:mm:ss"} />,
       component: <Input />,
     },
+    {
+      name: "file",
+      label: "Hình ảnh",
+      component: (
+        <Upload
+          showUploadList={true}
+          beforeUpload={(file) => {
+            setFile(file);
+            return false;
+          }}
+        >
+          <Button icon={<UploadOutlined />}>Tải lên hình ảnh</Button>
+        </Upload>
+      ),
+    },
   ];
 
   // create
@@ -399,10 +448,25 @@ function Vouchers() {
     axiosClient
       .post("/vouchers", values)
       .then((response) => {
-        message.success("Thêm thành công!");
-        createForm.resetFields(); //reset input form
-        setCreateFormVisible(false);
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/vouchers/${_id}`, formData)
+            .then((response) => {
+              message.success("Tải lên hình ảnh thành công!");
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              message.error(err.response.data);
+              console.log(err);
+            });
+        }
+        createForm.resetFields();
         setRefresh((f) => f + 1);
+        message.success("Thêm mới thành công!");
       })
       .catch((err) => {
         message.error("Thêm thất bại!");
@@ -418,6 +482,22 @@ function Vouchers() {
     axiosClient
       .patch("/vouchers/" + selectedRecord._id, values)
       .then((response) => {
+        if (values.file !== undefined) {
+          //UPLOAD FILE
+          const { _id } = response.data;
+          const formData = new FormData();
+          formData.append("file", file);
+          axios
+            .post(`${API_URL}/upload/vouchers/${_id}`, formData)
+            .then((response) => {
+              message.success("Tải lên hình ảnh thành công!");
+              // createForm.resetFields();
+            })
+            .catch((err) => {
+              message.error("Tải lên hình ảnh thất bại!");
+              console.log(err);
+            });
+        }
         updateForm.resetFields();
         setEditFormVisible(false);
         setRefresh((f) => f + 1);
