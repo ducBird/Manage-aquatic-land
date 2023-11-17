@@ -15,11 +15,27 @@ import {
   Space,
   Popconfirm,
   DatePicker,
+  Tag,
 } from "antd";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  CheckCircleFilled,
+  CheckCircleOutlined,
+  CheckSquareFilled,
+  ClockCircleFilled,
+  ClockCircleOutlined,
+  CloseCircleFilled,
+  CloseCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  LoginOutlined,
+  PlayCircleOutlined,
+  RollbackOutlined,
+  SelectOutlined,
+} from "@ant-design/icons";
 import { axiosClient } from "../../../libraries/axiosClient";
 import { IProduct } from "../../../interfaces/Product";
 import { IEmployees } from "../../../interfaces/Employees";
+import TextArea from "antd/es/input/TextArea";
 
 export default function Orders() {
   const [editFormVisible, setEditFormVisible] = React.useState(false);
@@ -38,9 +54,11 @@ export default function Orders() {
     status: string;
     full_name: string;
     phoneNumber: number;
+    payment_information: string;
+    payment_status: string;
     createdAt: any;
     shipped_date: any;
-    full_address: string;
+    shipping_address: string;
     employee: any;
     order_details: any;
   } | null>(null);
@@ -96,25 +114,45 @@ export default function Orders() {
   const renderStatus = (result: any) => {
     return (
       <div>
-        {result && result === "WAIT FOR CONFIRMATION"
-          ? "Chờ xác nhận"
-          : result === "WAITING FOR PICKUP"
-          ? "Chờ lấy hàng"
-          : result === "DELIVERING"
-          ? "Đang giao"
-          : result === "DELIVERED"
-          ? "Đã giao"
-          : result === "RECEIVED"
-          ? "Đã nhận"
-          : result === "CANCELLED"
-          ? "Đã hủy"
-          : result === "RETURNS"
-          ? "Trả hàng"
-          : result === "RETURNING"
-          ? "Đang trả hàng"
-          : result === "RETURNED"
-          ? "Đã trả"
-          : "Null"}
+        {result && result === "WAIT FOR CONFIRMATION" ? (
+          <Tag icon={<ClockCircleFilled />} color="default">
+            Chờ xác nhận
+          </Tag>
+        ) : result === "WAITING FOR PICKUP" ? (
+          <Tag icon={<ClockCircleOutlined />} color="warning">
+            Chờ lấy hàng
+          </Tag>
+        ) : result === "DELIVERING" ? (
+          <Tag icon={<PlayCircleOutlined />} color="processing">
+            Đang giao
+          </Tag>
+        ) : result === "DELIVERED" ? (
+          <Tag icon={<CheckCircleOutlined />} color="success">
+            Đã giao
+          </Tag>
+        ) : result === "RECEIVED" ? (
+          <Tag icon={<CheckSquareFilled />} color="#177245">
+            Đã nhận
+          </Tag>
+        ) : result === "CANCELLED" ? (
+          <Tag icon={<CloseCircleOutlined />} color="error">
+            Đã hủy
+          </Tag>
+        ) : result === "RETURNS" ? (
+          <Tag icon={<RollbackOutlined />} color="volcano">
+            Trả hàng
+          </Tag>
+        ) : result === "RETURNING" ? (
+          <Tag icon={<LoginOutlined />} color="geekblue">
+            Đang trả hàng
+          </Tag>
+        ) : result === "RETURNED" ? (
+          <Tag icon={<SelectOutlined />} color="#000">
+            Đã trả hàng
+          </Tag>
+        ) : (
+          "Null"
+        )}
       </div>
     );
   };
@@ -222,11 +260,27 @@ export default function Orders() {
       key: "payment_information",
     },
     {
-      title: "Trạng thái",
+      title: "Vận chuyển",
       dataIndex: "status",
       key: "status",
       render: (text: string) => {
         return renderStatus(text);
+      },
+    },
+    {
+      title: "Thanh toán",
+      dataIndex: "payment_status",
+      key: "payment_status",
+      render: (text: boolean) => {
+        return (
+          <p style={{ textAlign: "center" }}>
+            {text ? (
+              <CheckCircleFilled style={{ color: "green" }} />
+            ) : (
+              <CloseCircleFilled style={{ color: "red" }} />
+            )}
+          </p>
+        );
       },
     },
     {
@@ -356,7 +410,7 @@ export default function Orders() {
         setRefresh((f) => f + 1);
         // đóng
         setEditFormVisible(false);
-        console.log();
+        console.log(values);
       })
       .catch((err) => {
         message.error("Cập nhật thất bại 😥");
@@ -503,26 +557,14 @@ export default function Orders() {
               <Input />
             </Form.Item>
 
-            {/* shipping_information */}
+            {/* shipping_address */}
             <Form.Item
               hasFeedback
-              className=""
-              label="Địa chỉ cụ thể"
-              name="shipping_information"
+              label="Địa chỉ"
+              name="shipping_address"
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
-              <Input />
-            </Form.Item>
-
-            {/* shipping_city */}
-            <Form.Item
-              hasFeedback
-              className=""
-              label="Tỉnh thành"
-              name="shipping_city"
-              rules={[{ required: true, message: "Không thể để trống" }]}
-            >
-              <Input />
+              <TextArea rows={3} />
             </Form.Item>
 
             {/* Payment Type */}
@@ -681,8 +723,18 @@ export default function Orders() {
               column={1}
               labelStyle={{ fontWeight: "700" }}
             >
-              <Descriptions.Item label="Trạng thái">
+              <Descriptions.Item label="Vận chuyển">
                 {renderStatus(selectedOrder.status)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hình thức thanh toán">
+                {selectedOrder.payment_information}
+              </Descriptions.Item>
+              <Descriptions.Item label="Thanh toán">
+                {selectedOrder.payment_status ? (
+                  <CheckCircleFilled style={{ color: "green" }} />
+                ) : (
+                  <CloseCircleFilled style={{ color: "red" }} />
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="Khách hàng">
                 {selectedOrder.full_name}
@@ -697,7 +749,7 @@ export default function Orders() {
                 {selectedOrder.shipped_date}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
-                {selectedOrder.full_address}
+                {selectedOrder.shipping_address}
               </Descriptions.Item>
               <Descriptions.Item label="Nhân viên">
                 {selectedOrder.employee?.full_name}
@@ -736,17 +788,11 @@ export default function Orders() {
           onFinish={onUpdateFinish}
           onFinishFailed={onUpdateFinishFailed}
           autoComplete="off"
-          // disabled={
-          //   selectedRecord && selectedRecord.status === "WAIT FOR CONFIRMATION"
-          //     ? false
-          //     : true
-          // }
         >
           <div className="w-[80%]">
             {/* Created Date */}
             <Form.Item
               hasFeedback
-              className=""
               label="Ngày tạo"
               name="createdAt"
               rules={[
@@ -757,42 +803,24 @@ export default function Orders() {
                 // { type: "date", message: "Ngày không hợp lệ" },
               ]}
             >
-              <Input />
+              <Input disabled />
             </Form.Item>
 
             {/* Shipped Date */}
-            <Form.Item
+            {/* <Form.Item
               hasFeedback
               className=""
               label="Ngày giao"
               name="shipped_date"
-              // rules={[
-              //   {
-              //     validator: dateOfValidator,
-              //   },
-              //   { type: "date", message: "Ngày không hợp lệ" },
-              //   {
-              //     validate: {
-              //       validator: function (value) {
-              //         if (!value) return true;
-              //         if (value < createAt) {
-              //           return false;
-              //         }
-              //         return true;
-              //       },
-              //       message: "Ngày giao phải nhỏ hơn ngày hiện tại",
-              //     },
-              //   },
-              // ]}
             >
-              <Input value={Date.now()} />
-            </Form.Item>
+              <Input />
+            </Form.Item> */}
 
             {/* Status */}
             <Form.Item
               hasFeedback
               className=""
-              label="Trạng thái đơn hàng"
+              label="Vận chuyển"
               name="status"
               rules={[
                 { required: true, message: "Không thể để trống" },
@@ -819,6 +847,12 @@ export default function Orders() {
               ]}
             >
               <Select
+                disabled={
+                  selectedRecord &&
+                  selectedRecord.status === "WAIT FOR CONFIRMATION"
+                    ? false
+                    : true
+                }
                 options={[
                   {
                     value: "WAIT FOR CONFIRMATION",
@@ -842,26 +876,15 @@ export default function Orders() {
               <Input />
             </Form.Item>
 
-            {/* shipping_information */}
+            {/* shipping_address */}
             <Form.Item
               hasFeedback
               className=""
-              label="Địa chỉ cụ thể"
-              name="shipping_information"
+              label="Địa chỉ"
+              name="shipping_address"
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
-              <Input />
-            </Form.Item>
-
-            {/* shipping_city */}
-            <Form.Item
-              hasFeedback
-              className=""
-              label="Tỉnh thành"
-              name="shipping_city"
-              rules={[{ required: true, message: "Không thể để trống" }]}
-            >
-              <Input />
+              <TextArea rows={3} />
             </Form.Item>
 
             {/* Payment Type */}
@@ -873,6 +896,7 @@ export default function Orders() {
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
               <Select
+                disabled
                 options={[
                   {
                     value: "CASH",
@@ -919,12 +943,12 @@ export default function Orders() {
             </Form.Item>
             {/* Employee */}
             <Form.Item
-              className=""
               label="Nhân viên"
               name="employee_id"
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
               <Select
+                disabled={selectedRecord?.employee_id}
                 options={
                   shipperEmployees &&
                   shipperEmployees.map((employee) => {

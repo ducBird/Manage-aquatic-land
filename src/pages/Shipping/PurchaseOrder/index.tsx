@@ -14,6 +14,7 @@ import {
   Space,
   Popconfirm,
   Upload,
+  Tag,
 } from "antd";
 import {
   DeleteOutlined,
@@ -22,12 +23,21 @@ import {
   CloseSquareFilled,
   CheckSquareFilled,
   UploadOutlined,
+  ClockCircleFilled,
+  ClockCircleOutlined,
+  PlayCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  RollbackOutlined,
+  LoginOutlined,
+  SelectOutlined,
 } from "@ant-design/icons";
 import { axiosClient } from "../../../libraries/axiosClient";
 import { useUser } from "../../../hooks/useUser";
 import { IOrders } from "../../../interfaces/IOrders";
 import axios from "axios";
 import { API_URL } from "../../../constants/URLS";
+import TextArea from "antd/es/input/TextArea";
 
 export default function PurchaseOrder() {
   const [editFormVisible, setEditFormVisible] = React.useState(false);
@@ -146,25 +156,45 @@ export default function PurchaseOrder() {
   const renderStatus = (result: any) => {
     return (
       <div>
-        {result && result === "WAIT FOR CONFIRMATION"
-          ? "Chờ xác nhận"
-          : result === "WAITING FOR PICKUP"
-          ? "Chờ lấy hàng"
-          : result === "DELIVERING"
-          ? "Đang giao"
-          : result === "DELIVERED"
-          ? "Đã giao"
-          : result === "RECEIVED"
-          ? "Đã nhận"
-          : result === "CANCELLED"
-          ? "Đã hủy"
-          : result === "RETURNS"
-          ? "Trả hàng"
-          : result === "RETURNING"
-          ? "Đang trả hàng"
-          : result === "RETURNED"
-          ? "Đã trả"
-          : "Null"}
+        {result && result === "WAIT FOR CONFIRMATION" ? (
+          <Tag icon={<ClockCircleFilled />} color="default">
+            Chờ xác nhận
+          </Tag>
+        ) : result === "WAITING FOR PICKUP" ? (
+          <Tag icon={<ClockCircleOutlined />} color="warning">
+            Chờ lấy hàng
+          </Tag>
+        ) : result === "DELIVERING" ? (
+          <Tag icon={<PlayCircleOutlined />} color="processing">
+            Đang giao
+          </Tag>
+        ) : result === "DELIVERED" ? (
+          <Tag icon={<CheckCircleOutlined />} color="success">
+            Đã giao
+          </Tag>
+        ) : result === "RECEIVED" ? (
+          <Tag icon={<CheckSquareFilled />} color="#177245">
+            Đã nhận
+          </Tag>
+        ) : result === "CANCELLED" ? (
+          <Tag icon={<CloseCircleOutlined />} color="error">
+            Đã hủy
+          </Tag>
+        ) : result === "RETURNS" ? (
+          <Tag icon={<RollbackOutlined />} color="volcano">
+            Trả hàng
+          </Tag>
+        ) : result === "RETURNING" ? (
+          <Tag icon={<LoginOutlined />} color="geekblue">
+            Đang trả hàng
+          </Tag>
+        ) : result === "RETURNED" ? (
+          <Tag icon={<SelectOutlined />} color="#000">
+            Đã trả hàng
+          </Tag>
+        ) : (
+          "Null"
+        )}
       </div>
     );
   };
@@ -742,6 +772,7 @@ export default function PurchaseOrder() {
       <h1 className="p-2 mb-5 text-xl">📦 Đơn Hàng Chờ Vận Chuyển</h1>
       {/* Modal view detail order */}
       <Modal
+        width={"60%"}
         centered
         title="Chi tiết đơn hàng"
         open={openModalOrderDetails}
@@ -787,7 +818,7 @@ export default function PurchaseOrder() {
                 {selectedOrder.shipped_date}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
-                {selectedOrder.full_address}
+                {selectedOrder.shipping_address}
               </Descriptions.Item>
               <Descriptions.Item label="Nhân viên">
                 {selectedOrder.employee?.full_name}
@@ -837,33 +868,7 @@ export default function PurchaseOrder() {
               name="createdAt"
               rules={[{ required: false }]}
             >
-              <Input />
-            </Form.Item>
-
-            {/* Shipped Date */}
-            <Form.Item
-              hasFeedback
-              className=""
-              label="Ngày giao"
-              name="shipped_date"
-              // rules={[
-              //   { required: true, type: "Date", message: "Không để trống" },
-              //   { type: "date", message: "Ngày không hợp lệ" },
-              //   {
-              //     validate: {
-              //       validator: function (value) {
-              //         if (!value) return true;
-              //         if (value < createDate) {
-              //           return false;
-              //         }
-              //         return true;
-              //       },
-              //       message: "Ngày giao phải nhỏ hơn ngày hiện tại",
-              //     },
-              //   },
-              // ]}
-            >
-              <Input value={Date.now()} />
+              <Input disabled />
             </Form.Item>
 
             {/* Status */}
@@ -897,6 +902,12 @@ export default function PurchaseOrder() {
               ]}
             >
               <Select
+                disabled={
+                  selectedRecord &&
+                  selectedRecord.status === "WAIT FOR CONFIRMATION"
+                    ? false
+                    : true
+                }
                 options={[
                   {
                     value: "WAITING FOR PICKUP",
@@ -925,10 +936,10 @@ export default function PurchaseOrder() {
               hasFeedback
               className=""
               label="Địa chỉ giao hàng"
-              name="full_address"
+              name="shipping_address"
               rules={[{ required: true, message: "Không thể để trống!" }]}
             >
-              <Input />
+              <TextArea rows={3} />
             </Form.Item>
 
             {/* Payment Type */}
@@ -940,6 +951,7 @@ export default function PurchaseOrder() {
               rules={[{ required: true, message: "Không thể để trống" }]}
             >
               <Select
+                disabled
                 options={[
                   {
                     value: "CASH",
@@ -986,6 +998,7 @@ export default function PurchaseOrder() {
               rules={[{ required: true, message: "Please selected empoyees!" }]}
             >
               <Select
+                disabled={selectedRecord?.employee_id}
                 options={
                   employees &&
                   employees.map((employee) => {

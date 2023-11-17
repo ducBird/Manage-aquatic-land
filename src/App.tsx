@@ -1,5 +1,5 @@
 import "./App.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "antd";
 import HeaderMenu from "./components/layout/HeaderMenu";
@@ -28,6 +28,7 @@ const { Header, Content, Sider } = Layout;
 
 function App() {
   const { users, initialize, refreshToken } = useUser((state) => state) as any;
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     if (Object.keys(users).length !== 0) {
@@ -44,6 +45,7 @@ function App() {
       };
     }
   }, [Object.keys(users).length]);
+
   return (
     <main>
       <BrowserRouter>
@@ -56,7 +58,16 @@ function App() {
             )}
           </Header>
           <Layout>
-            <Sider theme="light" width={"20%"} style={{ minHeight: "100vh" }}>
+            <Sider
+              theme="light"
+              width={"20%"}
+              style={{ minHeight: "100vh" }}
+              collapsible
+              collapsed={collapsed}
+              onCollapse={() => {
+                setCollapsed(!collapsed);
+              }}
+            >
               {window.localStorage.getItem("refresh_token") ? (
                 <SiderMenu />
               ) : (
