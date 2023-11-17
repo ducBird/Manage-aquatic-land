@@ -1,7 +1,7 @@
 export const OrderPaymentInformation = [
   {
     label: "Thanh toán bằng tiền mặt",
-    value: "COD",
+    value: "CASH",
   },
   {
     label: "Thanh toán bằng VNPAY",

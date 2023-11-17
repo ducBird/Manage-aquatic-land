@@ -538,8 +538,8 @@ export default function Orders() {
               <Select
                 options={[
                   {
-                    value: "COD",
-                    label: "COD",
+                    value: "CASH",
+                    label: "CASH",
                   },
                   {
                     value: "MOMO",
@@ -877,8 +877,8 @@ export default function Orders() {
               <Select
                 options={[
                   {
-                    value: "COD",
-                    label: "COD",
+                    value: "CASH",
+                    label: "CASH",
                   },
                   {
                     value: "MOMO",

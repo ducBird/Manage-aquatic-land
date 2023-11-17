@@ -566,7 +566,7 @@ export default function ReturnOrder() {
                     label: "MOMO",
                   },
                   {
-                    value: "COD",
+                    value: "CASH",
                     label: "Thanh Toán Bằng Tiền Mặt",
                   },
                 ]}

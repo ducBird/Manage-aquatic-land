@@ -3,12 +3,16 @@ import numeral from "numeral";
 import React from "react";
 import { axiosClient } from "../../../libraries/axiosClient";
 import locale from "antd/lib/date-picker/locale/vi_VN";
-import { OrderPaymentInformation } from "../../../meta/OrderPaymentInformation";
+import {
+  OrderPaymentInformation,
+  PaymentOption,
+} from "../../../meta/OrderPaymentInformation";
 import { IOrders } from "../../../interfaces/IOrders";
 function OrdersByPaymentInformation() {
   const [isModalVisible, setIsModalVisible] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [orders, setOrders] = React.useState<IOrders[]>([]);
+  const [oderValue, setOrderValue] = React.useState<string>("Tất cả đơn hàng");
   const [searchForm] = Form.useForm();
   const showModal = () => {
     setIsModalVisible(true);
@@ -70,16 +74,26 @@ function OrdersByPaymentInformation() {
   );
   // Sử dụng filter để lọc ra các hóa đơn có (payment_information === paypal)
   const paymentCod = orders.filter(
-    (order) => order?.payment_information === "COD"
+    (order) => order?.payment_information === "CASH"
+  );
+  // Tính tổng từ các đơn hàng
+  const total = orders.reduce(
+    (total, order) => total + order?.total_money_order,
+    0
+  );
+  //tổng thu
+  const totalRevenue = paidOrders.reduce(
+    (total, order) => total + order.total_money_order,
+    0
   );
   // Orders
   const columns = [
     {
       title: "Khách hàng",
-      dataIndex: "last_name",
-      key: "last_name",
-      render: (text: string) => {
-        return <p>{text}</p>;
+      dataIndex: "customer",
+      key: "customer",
+      render: (customer: any) => {
+        return <p>{customer.full_name}</p>;
       },
     },
     {
@@ -136,7 +150,12 @@ function OrdersByPaymentInformation() {
       },
     },
   ];
-
+  React.useEffect(() => {
+    axiosClient.get("/orders").then((response) => {
+      setOrders(response.data);
+      console.log(response.data);
+    });
+  }, []);
   const onFinish = (values: any) => {
     console.log(values);
     // Lọc ra các thuộc tính không xác định
@@ -211,7 +230,12 @@ function OrdersByPaymentInformation() {
               },
             ]}
           >
-            <Select options={OrderPaymentInformation} />
+            <Select
+              options={OrderPaymentInformation}
+              onChange={(value, option) => {
+                setOrderValue(`Đơn hàng - ${option.label}`);
+              }}
+            />
           </Form.Item>
           {/* <Form.Item label="Hình thức thanh toán" name="payment_information">
             <Select options={OrderPaymentInformation} />
@@ -232,32 +256,50 @@ function OrdersByPaymentInformation() {
           </Form.Item>
         </Form>
       </div>
-      <div style={{ margin: "10px 0" }}>
-        <Button
-          type="primary"
-          onClick={showModal}
-          disabled={orders.length === 0}
-        >
-          Xem thống kê
-        </Button>
+      <div style={{ margin: "10px 0", display: "flex" }}>
+        <div style={{ flex: 1 }}>
+          <Button
+            type="primary"
+            onClick={showModal}
+            disabled={orders.length === 0}
+          >
+            Xem thống kê
+          </Button>
+        </div>
+        <div style={{ fontSize: "18px", fontWeight: 500 }}>
+          <p>{oderValue}</p>
+        </div>
       </div>
       <Table rowKey="_id" dataSource={orders} columns={columns} />
-      <Modal
-        title="Thống kê"
-        open={isModalVisible}
-        onOk={handleOk}
-        onCancel={handleCancel}
-      >
-        <div>
+      <Modal open={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+        <div
+          style={{
+            fontSize: "30px",
+            fontWeight: 600,
+            textTransform: "uppercase",
+          }}
+        >
+          Thống kê
+        </div>
+        <div
+          style={{
+            fontWeight: 500,
+            fontSize: "18px",
+          }}
+        >
           <p>
-            Tổng hóa đơn: <span>{orders.length}</span>
+            Tổng số hóa đơn:{" "}
+            <span style={{ color: "green" }}>{orders.length}</span>
           </p>
           <p>
-            Hóa đơn đã thanh toán: <span>{paidOrders.length}</span>
+            Hóa đơn đã thanh toán:{" "}
+            <span style={{ color: "green" }}>{paidOrders.length}</span>
           </p>
           <p>
             Hóa đơn chưa thanh toán:{" "}
-            <span>{orders.length - paidOrders.length}</span>
+            <span style={{ color: "red" }}>
+              {orders.length - paidOrders.length}
+            </span>
           </p>
           <p>
             Thanh toán vnpay: <span>{paymentVnpay.length}</span>
@@ -267,6 +309,27 @@ function OrdersByPaymentInformation() {
           </p>
           <p>
             Thanh toán khi nhận hàng: <span>{paymentCod.length}</span>
+          </p>
+          <p>
+            Tổng:{" "}
+            <span style={{ color: "blue" }}>
+              {numeral(total).format("0,0").replace(/,/g, ".")} vnđ
+            </span>
+          </p>
+          <p>
+            Tổng thu:{" "}
+            <span style={{ color: "green" }}>
+              {numeral(totalRevenue).format("0,0").replace(/,/g, ".")} vnđ
+            </span>
+          </p>
+          <p>
+            Tổng chi:{" "}
+            <span style={{ color: "red" }}>
+              {numeral(total - totalRevenue)
+                .format("0,0")
+                .replace(/,/g, ".")}{" "}
+              vnđ
+            </span>
           </p>
         </div>
       </Modal>

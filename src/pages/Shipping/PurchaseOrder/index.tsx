@@ -943,8 +943,8 @@ export default function PurchaseOrder() {
               <Select
                 options={[
                   {
-                    value: "COD",
-                    label: "COD",
+                    value: "CASH",
+                    label: "CASH",
                   },
                   {
                     value: "MOMO",
