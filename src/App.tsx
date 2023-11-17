@@ -20,6 +20,7 @@ import "numeral/locales/vi";
 import OrdersByStatus from "./pages/Sales/Orders/OrdersByStatus";
 import OrdersByPaymentInformation from "./pages/Sales/Orders/OrdersByPaymentInformation";
 import OrdersByPaymentStatus from "./pages/Sales/Orders/OrdersByPaymentStatus";
+import Vouchers from "./pages/Management/Vouchers";
 import PurchaseOrder from "./pages/Shipping/PurchaseOrder";
 import ReturnOrder from "./pages/Shipping/ReturnOrder";
 numeral.locale("vi");
@@ -111,6 +112,7 @@ function App() {
                     path="/management/accumulated"
                     element={<Accumulated />}
                   />
+                  <Route path="/management/vouchers" element={<Vouchers />} />
                   <Route path="/sales/orders" element={<Orders />} />
 
                   {/* thống kê */}

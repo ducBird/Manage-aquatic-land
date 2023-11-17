@@ -34,7 +34,7 @@ export default function CustomForm({
       onFinish={onFinish}
       onFinishFailed={onFinishFailed}
       onFieldsChange={onFieldsChange}
-      labelCol={{ span: 6 }}
+      labelCol={{ span: 8 }}
       wrapperCol={{ span: 16 }}
     >
       {fields.map((field) => (

@@ -315,6 +315,7 @@ export default function Orders() {
           <Button
             onClick={() => {
               setSelectedOrder(record);
+              console.log(record);
               setOpenModalDetails(true);
             }}
           >
@@ -400,6 +401,7 @@ export default function Orders() {
 
   // update form
   // xử lý cập nhật thông tin
+  console.log("selectedRecord", selectedRecord);
   const onUpdateFinish = (values: any) => {
     axiosClient
       .patch("/orders/" + selectedRecord?._id, values)

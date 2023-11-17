@@ -738,6 +738,7 @@ export default function PurchaseOrder() {
       .patch("/orders/" + selectedRecord._id, {
         file,
         status: "DELIVERED",
+        payment_status: true,
         shipped_date: Date.now(),
       })
       .then((response) => {

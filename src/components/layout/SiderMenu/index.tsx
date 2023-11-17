@@ -60,6 +60,11 @@ export default function SiderMenu() {
           key: "management-accumulated",
           icon: <RiLuggageDepositLine />,
         },
+        {
+          label: "Vouchers",
+          key: "management-vouchers",
+          icon: <AiOutlineShopping />,
+        },
         // {
         //   label: "Nhà cung cấp",
         //   key: "management-suppliers",

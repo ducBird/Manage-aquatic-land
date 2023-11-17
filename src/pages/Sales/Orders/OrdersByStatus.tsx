@@ -1,15 +1,17 @@
 import { Button, DatePicker, Form, Select, Table, message, Modal } from "antd";
 import numeral from "numeral";
-import React from "react";
+import React, { useEffect } from "react";
 import { axiosClient } from "../../../libraries/axiosClient";
 import { OrderStatus } from "../../../meta/OrderStatus";
 import locale from "antd/lib/date-picker/locale/vi_VN";
 import { IOrders } from "../../../interfaces/IOrders";
+import { PieChart, Pie, Legend, Tooltip, Cell } from "recharts";
 function OrdersByStatus() {
   const [isModalVisible, setIsModalVisible] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [orders, setOrders] = React.useState<IOrders[]>([]);
   const [searchForm] = Form.useForm();
+  const [oderValue, setOrderValue] = React.useState<string>("Tất cả đơn hàng");
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -56,6 +58,25 @@ function OrdersByStatus() {
       </div>
     );
   };
+  const datas = [
+    {
+      name: "Cá và hải sản",
+      value: 30,
+    },
+    {
+      name: "Gà",
+      value: 10,
+    },
+    {
+      name: "Heo",
+      value: 20,
+    },
+    {
+      name: "Rau củ quả",
+      value: 40,
+    },
+  ];
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
   // Sử dụng filter để lọc ra các hóa đơn đã thanh toán (payment_status === true)
   const paidOrders = orders.filter((order) => order?.payment_status === true);
@@ -71,14 +92,24 @@ function OrdersByStatus() {
   const paymentCod = orders.filter(
     (order) => order?.payment_information === "CASH"
   );
+  // Tính tổng từ các đơn hàng
+  const total = orders.reduce(
+    (total, order) => total + order?.total_money_order,
+    0
+  );
+  //tổng thu
+  const totalRevenue = paidOrders.reduce(
+    (total, order) => total + order.total_money_order,
+    0
+  );
   // Orders
   const columns = [
     {
       title: "Khách hàng",
-      dataIndex: "last_name",
-      key: "last_name",
-      render: (text: string) => {
-        return <p>{text}</p>;
+      dataIndex: "customer",
+      key: "customer",
+      render: (customer: any) => {
+        return <p>{customer.full_name}</p>;
       },
     },
     {
@@ -131,13 +162,17 @@ function OrdersByStatus() {
       dataIndex: "total_money_order",
       key: "total_money_order",
       render: (text: number) => {
-        return <p>{text}</p>;
+        return <p>{numeral(text).format("0,0").replace(/,/g, ".")} vnđ</p>;
       },
     },
   ];
 
+  useEffect(() => {
+    axiosClient.get("/orders").then((response) => {
+      setOrders(response.data);
+    });
+  }, []);
   const onFinish = (values: any) => {
-    console.log(values);
     // Lọc ra các thuộc tính không xác định
     const filteredValues = Object.fromEntries(
       Object.entries(values).filter(
@@ -146,29 +181,29 @@ function OrdersByStatus() {
     );
 
     const numKeys = Object.keys(filteredValues).length;
-    console.log(numKeys);
     setLoading(true);
 
+    // lọc theo nhiều query
     if (numKeys > 1) {
       axiosClient
         .post("/orders/query-order-by-status", values)
         .then((response) => {
           message.success("Thành công");
           setOrders(response.data);
-          console.log(response.data);
           setLoading(false);
         })
         .catch((err) => {
           message.error("Đã xảy ra lỗi, vui lòng kiểm tra lại!");
           setLoading(false);
         });
-    } else {
+    }
+    // lọc một query
+    else {
       axiosClient
         .post("/orders/query-one", values)
         .then((response) => {
           message.success("Thành công");
           setOrders(response.data);
-          console.log(response.data);
           setLoading(false);
         })
         .catch((err) => {
@@ -210,7 +245,12 @@ function OrdersByStatus() {
               },
             ]}
           >
-            <Select options={OrderStatus} />
+            <Select
+              options={OrderStatus}
+              onChange={(value, option) => {
+                setOrderValue(`Đơn hàng - ${option.label}`);
+              }}
+            />
           </Form.Item>
           <Form.Item label="Từ ngày" name="fromDate">
             <DatePicker format="YYYY-MM-DD" locale={locale} />
@@ -225,32 +265,77 @@ function OrdersByStatus() {
           </Form.Item>
         </Form>
       </div>
-      <div style={{ margin: "10px 0" }}>
-        <Button
-          type="primary"
-          onClick={showModal}
-          disabled={orders.length === 0}
-        >
-          Xem thống kê
-        </Button>
+      {/* <div>
+        <div style={{ marginLeft: "30%" }}>
+          <PieChart width={500} height={500}>
+            <Pie
+              data={datas}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={200}
+              fill="#8884d8"
+              labelLine={false}
+            >
+              {datas.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </div>
+        <h3 style={{ textAlign: "center" }}>Biểu đồ doanh thu</h3>
+      </div> */}
+      <div style={{ margin: "10px 0", display: "flex" }}>
+        <div style={{ flex: 1 }}>
+          <Button
+            type="primary"
+            onClick={showModal}
+            disabled={orders.length === 0}
+          >
+            Xem thống kê
+          </Button>
+        </div>
+        <div style={{ fontSize: "18px", fontWeight: 500 }}>
+          <p>{oderValue}</p>
+        </div>
       </div>
       <Table rowKey="_id" dataSource={orders} columns={columns} />
-      <Modal
-        title="Thống kê"
-        open={isModalVisible}
-        onOk={handleOk}
-        onCancel={handleCancel}
-      >
-        <div>
+
+      <Modal open={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+        <div
+          style={{
+            fontSize: "30px",
+            fontWeight: 600,
+            textTransform: "uppercase",
+          }}
+        >
+          Thống kê
+        </div>
+        <div
+          style={{
+            fontWeight: 500,
+            fontSize: "18px",
+          }}
+        >
           <p>
-            Tổng hóa đơn: <span>{orders.length}</span>
+            Tổng số hóa đơn:{" "}
+            <span style={{ color: "green" }}>{orders.length}</span>
           </p>
           <p>
-            Hóa đơn đã thanh toán: <span>{paidOrders.length}</span>
+            Hóa đơn đã thanh toán:{" "}
+            <span style={{ color: "green" }}>{paidOrders.length}</span>
           </p>
           <p>
             Hóa đơn chưa thanh toán:{" "}
-            <span>{orders.length - paidOrders.length}</span>
+            <span style={{ color: "red" }}>
+              {orders.length - paidOrders.length}
+            </span>
           </p>
           <p>
             Thanh toán vnpay: <span>{paymentVnpay.length}</span>
@@ -260,6 +345,27 @@ function OrdersByStatus() {
           </p>
           <p>
             Thanh toán khi nhận hàng: <span>{paymentCod.length}</span>
+          </p>
+          <p>
+            Tổng:{" "}
+            <span style={{ color: "blue" }}>
+              {numeral(total).format("0,0").replace(/,/g, ".")} vnđ
+            </span>
+          </p>
+          <p>
+            Tổng thu:{" "}
+            <span style={{ color: "green" }}>
+              {numeral(totalRevenue).format("0,0").replace(/,/g, ".")} vnđ
+            </span>
+          </p>
+          <p>
+            Tổng chi:{" "}
+            <span style={{ color: "red" }}>
+              {numeral(total - totalRevenue)
+                .format("0,0")
+                .replace(/,/g, ".")}{" "}
+              vnđ
+            </span>
           </p>
         </div>
       </Modal>
