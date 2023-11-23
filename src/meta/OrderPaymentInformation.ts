@@ -5,10 +5,14 @@ export const OrderPaymentInformation = [
   },
   {
     label: "Thanh toán bằng VNPAY",
-    value: "vnpay",
+    value: "VNPAY",
   },
   {
     label: "Thanh toán bằng PAYPAL",
-    value: "paypal",
+    value: "PAYPAL",
+  },
+  {
+    label: "Thanh toán bằng MOMO",
+    value: "MOMO",
   },
 ];

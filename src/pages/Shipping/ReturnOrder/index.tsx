@@ -44,7 +44,7 @@ export default function ReturnOrder() {
       });
     }
     if (
-      users.roles.some((role) => {
+      users?.roles?.some((role) => {
         return (
           role === "directors" ||
           role === "administrator" ||
